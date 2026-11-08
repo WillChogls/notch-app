@@ -21,10 +21,6 @@
 
 <br>
 
-<p align="center">
-  <img width="616" src="Resources/readme/hero-dark.gif" alt="The cursor moves to the notch, the panel springs open, and the widget switches from Office to Calendar to Clock">
-</p>
-
 <img src="Resources/readme/closed-open-dark.png" alt="Side by side: the closed notch with album art and equalizer bars, and the same notch opened into the full panel">
 
 ## Features
