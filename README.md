@@ -67,7 +67,7 @@ Artwork, title, a scrubbable progress bar, previous/play/next, and **shuffle and
 <td width="50%" valign="top">
 
 ### ↗️ App shortcut buttons
-One click opens your music app (you pick Spotify or Apple Music in Settings) or Munder Difflin. The buttons hide when an app isn't installed.
+One click opens your music app (you pick Spotify or Apple Music in Settings) or Munder Difflin (an agent management app). The buttons hide when an app isn't installed.
 
 </td>
 </tr>
@@ -75,7 +75,7 @@ One click opens your music app (you pick Spotify or Apple Music in Settings) or 
 <td colspan="2">
 
 ### 🧩 One widget slot, your choice
-The right-hand card shows the widget you pick: **Office** (what each Munder Difflin agent is doing), **Calendar** (this week, today highlighted), **Clock**, or **Weather** (your city, found automatically).
+The right-hand card shows the widget you pick: **Office** (live status of your Munder Difflin agents), **Calendar** (this week, today highlighted), **Clock**, or **Weather** (your city, found automatically).
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="Resources/readme/widgets-light.png">
@@ -157,17 +157,6 @@ Notch asks for each permission only when a feature first needs it. If music is a
   - Music app (Spotify / Apple Music).
   - Widget (Office / Calendar / Clock / Weather).
   - Open at login.
-
-## Roadmap
-
-Already shipped: the Settings window, open at login, the real-audio equalizer, shuffle and repeat, the widget slot, and the app shortcuts.
-
-Next up:
-- [ ] Volume and brightness display in the notch, replacing the system pop-up
-- [ ] Swipe between the Home and Shelf tabs
-- [ ] Timers and a Focus mode indicator
-- [ ] Clipboard history and quick notes
-- [ ] AirPods battery and synced lyrics
 
 ## Built with
 
