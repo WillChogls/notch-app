@@ -1,13 +1,7 @@
-<p align="center">
-  <img src="Resources/AppIcon-1024.png" width="128" alt="Notch app icon">
-</p>
-
-<h1 align="center">Notch</h1>
-
-<p align="center">
-  <b>Your MacBook notch, made useful.</b><br>
-  A native SwiftUI “Dynamic Island” for macOS: music, live widgets and a file shelf in a liquid-glass panel that grows out of the notch.
-</p>
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/banner-light.png">
+  <img src="Resources/readme/banner-dark.png" alt="Notch: your MacBook notch, made useful. The open panel shows now playing and the Office widget.">
+</picture>
 
 <p align="center">
   <img src="Resources/readme/badge-macos.svg" alt="macOS 14+">
@@ -17,112 +11,93 @@
 </p>
 
 <p align="center">
-  <img src="Resources/readme/demo-open.gif" width="720" alt="Hovering the notch opens a liquid glass panel from the centre">
+  Music, live widgets and a file shelf in a liquid glass panel that grows out of the notch.<br>
+  Native SwiftUI, no dependencies.
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> ·
-  <a href="#demos">Demos</a> ·
-  <a href="#install">Install</a> ·
-  <a href="#permissions">Permissions</a> ·
-  <a href="#settings">Settings</a>
+  <a href="#features"><b>Features</b></a> ·
+  <a href="#install"><b>Install</b></a> ·
+  <a href="#permissions"><b>Permissions</b></a> ·
+  <a href="#settings"><b>Settings</b></a>
 </p>
 
----
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/hero-light.gif">
+  <img src="Resources/readme/hero-dark.gif" alt="The cursor moves to the notch, the panel springs open, and the widget switches from Office to Calendar to Clock">
+</picture>
+<br><br>
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/closed-open-light.png">
+  <img src="Resources/readme/closed-open-dark.png" alt="Side by side: the closed notch with album art and equalizer bars, and the same notch opened into the full panel">
+</picture>
 
 ## Features
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
-### 🫧 Liquid glass panel
-Hover the notch and a glass panel springs open from the centre. Its top edge stays black, so it blends into the hardware notch. It follows light and dark mode, and you can set its opacity and size.
-
-</td>
-<td width="50%" valign="top">
-
-### 🎚️ Equalizer that hears the music
-While a song plays, the closed notch shows the album art and four bars in the album's colour. They react to the real audio of the music app, not to random numbers, and they stop using the processor when the music pauses.
-
-</td>
-</tr>
-<tr>
-<td colspan="2">
+<h3 align="center">🎵 Now playing, with bars that hear the music</h3>
+<p align="center">
+  Spotify and Apple Music. Artwork, a scrubbable timeline, and shuffle and repeat that light up when on.<br>
+  The bars follow the real audio, in the album's colour, and cost nothing while paused.<br>
+  Plug in, and the closed notch shows a charging pill too.
+</p>
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/design/shuffle-repeat-v2-light.png">
-  <img src="Resources/design/shuffle-repeat-v2-dark.png" alt="Now playing with artwork, equalizer, shuffle, repeat and transport controls">
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/live-light.gif">
+  <img src="Resources/readme/live-dark.gif" alt="The closed notch with album art on the left and four equalizer bars moving to the music on the right">
 </picture>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-### 🎵 Now playing, Spotify and Apple Music
-Artwork, title, a scrubbable progress bar, previous/play/next, and **shuffle and repeat** toggles that light up blue when on.
-
-</td>
-<td width="50%" valign="top">
-
-### ↗️ App shortcut buttons
-One click opens your music app (you pick Spotify or Apple Music in Settings) or Munder Difflin (an agent management app). The buttons hide when an app isn't installed.
-
-</td>
-</tr>
-<tr>
-<td colspan="2">
-
-### 🧩 One widget slot, your choice
-The right-hand card shows the widget you pick: **Office** (live status of your Munder Difflin agents), **Calendar** (this week, today highlighted), **Clock**, or **Weather** (your city, found automatically).
+<h3 align="center">🧩 One widget, your pick</h3>
+<p align="center">
+  <b>Office</b> shows your agents live in Munder Difflin, an agent management app.<br>
+  Or choose <b>Calendar</b>, <b>Clock</b> or <b>Weather</b> for your city. Only the one you pick runs.
+</p>
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/widgets-light.png">
-  <img src="Resources/readme/widgets-dark.png" alt="The four widgets: Office, Calendar, Clock and Weather">
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/feature-widgets-light.png">
+  <img src="Resources/readme/feature-widgets-dark.png" alt="The four widgets side by side: Office, Calendar, Clock and Weather">
 </picture>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+<h3 align="center">📥 A shelf for files in transit</h3>
+<p align="center">
+  Drop files on the notch, drag them out where you need them, or AirDrop them all at once.<br>
+  The shelf survives relaunches.
+</p>
 
-### 📥 File shelf
-Drag files onto the notch to stash them, then drag them back out where you need them. You can also double-click to open them or AirDrop them all. The shelf survives relaunches.
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/feature-shelf-light.png">
+  <img src="Resources/readme/feature-shelf-dark.png" alt="The shelf tab holding three files, with AirDrop and Clear buttons">
+</picture>
 
-<img src="Resources/readme/shelf.png" alt="The file shelf with a few files">
-
-</td>
-<td width="50%" valign="top">
-
-### 🔋 Live activities
-The closed notch grows small “wings” for what's happening right now: album art and bars while music plays, and a charging pill when you plug in.
-
-<img src="Resources/readme/closed-notch.png" alt="The closed notch with album art and equalizer bars">
-
-</td>
-</tr>
-</table>
-
-## Demos
-
-| Panel opens from the centre | Bars follow the music | Switching widgets |
-|:---:|:---:|:---:|
-| <img src="Resources/readme/demo-open.gif" width="260" alt="Panel opening"> | <img src="Resources/readme/demo-equalizer.gif" width="260" alt="Equalizer reacting to music"> | <img src="Resources/readme/demo-widgets.gif" width="260" alt="Switching between widgets"> |
+<h3 align="center">↗️ One click to your apps</h3>
+<p align="center">
+  Buttons open your music app or Munder Difflin, using their real icons. They hide when an app isn't installed.
+</p>
 
 ## Install
 
-**Requirements:**
+```bash
+git clone https://github.com/WillChogls/notch-app.git
+cd notch-app && ./build.sh install
+```
+
+Notch builds, copies itself to `/Applications` and launches. It lives in the menu bar: click its capsule for **Settings…** and **Quit**.
+
+<details>
+<summary><b>Requirements</b></summary>
+<br>
+
 - macOS 14 Sonoma or later. macOS 26 gives the full Liquid Glass look; 14–15 use a frosted fallback.
-- The real-audio equalizer needs macOS 14.2+; older systems fall back to a simulated beat.
+- The real-audio equalizer needs macOS 14.2+; older systems show a simulated beat.
 - The Swift toolchain. Command Line Tools is enough (`xcode-select --install`); Xcode is not needed.
 - Any Mac works. Without a notch, Notch draws a pill at the top of the screen.
 
-```bash
-git clone https://github.com/WillChogls/notch-app.git
-cd notch-app
-./build.sh install   # build, copy to /Applications/Notch.app, launch
-```
+</details>
+
+<details>
+<summary><b>Build commands</b></summary>
+<br>
 
 | Command | What it does |
 |---|---|
@@ -130,39 +105,40 @@ cd notch-app
 | `./build.sh run` | Builds and launches it from `build/` |
 | `./build.sh install` | Builds, installs to `/Applications` and launches |
 
-Notch lives in the menu bar. Click its capsule for **Settings…** and **Quit**. Launching Notch again from Spotlight also opens Settings.
+</details>
 
 ## Permissions
 
-Notch asks for each permission only when a feature first needs it. If music is already playing when Notch starts, the first two are asked right away.
+Notch asks for each permission only when a feature first needs it, and records nothing.
 
-| Permission | When it's asked | Why |
+<details>
+<summary><b>What it asks for, and why</b></summary>
+<br>
+
+| Permission | Asked when | Why |
 |---|---|---|
-| **Automation** (Music / Spotify) | The first time Notch sees Spotify or Music running or playing | To read the track and artwork, and to play, skip, shuffle and repeat |
-| **Audio capture** | The first time music plays while Notch is running | To listen to the music app only, so the bars move with it. Nothing is recorded or saved. |
-| **Location** | The first time you pick the Weather widget | To show the weather for your city (city-level; weather from [Open-Meteo](https://open-meteo.com)) |
+| **Automation** (Music / Spotify) | Notch first sees Spotify or Music playing | To read the track and artwork, and to play, skip, shuffle and repeat |
+| **Audio capture** | Music first plays while Notch runs | To listen to the music app only, so the bars move with it. Nothing is recorded or saved. |
+| **Location** | You first pick the Weather widget | City-level, for the forecast (weather from [Open-Meteo](https://open-meteo.com)) |
 
-> Builds are ad-hoc signed, so macOS may ask again after you rebuild.
+Builds are ad-hoc signed, so macOS may ask again after you rebuild.
+
+</details>
 
 ## Settings
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/settings-light.png">
-  <img src="Resources/readme/settings-dark.png" width="440" alt="Notch Settings window">
+  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/feature-settings-light.png">
+  <img src="Resources/readme/feature-settings-dark.png" alt="The Notch Settings window with Panel and General cards">
 </picture>
 
-- **Panel:** opacity and open size.
-- **General:**
-  - Appearance (Auto / Light / Dark).
-  - Music app (Spotify / Apple Music).
-  - Widget (Office / Calendar / Clock / Weather).
-  - Open at login.
+<p align="center">
+  Panel opacity and size · Appearance · Music app · Widget · Open at login
+</p>
 
-## Built with
+<br>
 
-Swift and SwiftUI with no third-party packages.
-- **Liquid Glass:** `glassEffect` (macOS 26).
-- **The equalizer:** Core Audio process taps, drawn as Core Animation layers.
-- **Weather:** Core Location, with forecasts from Open-Meteo.
-
-Design specs for every part of the app live in [`Resources/design/`](Resources/design).
+<p align="center">
+  <sub>Swift and SwiftUI, no third-party packages: Liquid Glass via <code>glassEffect</code>, Core Audio process taps for the equalizer, Core Location with Open-Meteo for weather.<br>
+  Design specs for every part of the app live in <a href="Resources/design"><code>Resources/design/</code></a>.</sub>
+</p>
