@@ -36,10 +36,15 @@ struct NotchBackground: View {
 
     var body: some View {
         let base: Color = scheme == .dark ? .black : .white
+        // Light: the band fades out over 6pt around the tab bar's bottom edge (28→34pt), ending 4pt above
+        // the content, so dark text never sits on black. Dark keeps its long fade. 1pt = 1/190 (openSize.height).
+        let pt: CGFloat = 1 / 190
+        let solid = scheme == .dark ? notchFraction : notchFraction - 4 * pt
+        let end = scheme == .dark ? notchFraction + 0.35 : notchFraction + 2 * pt
         let fade = shape.fill(LinearGradient(stops: [
             .init(color: .black, location: 0),
-            .init(color: .black, location: notchFraction),
-            .init(color: base.opacity(opacity * 0.9), location: min(notchFraction + 0.35, 1)),
+            .init(color: .black, location: solid),
+            .init(color: base.opacity(opacity * 0.9), location: min(end, 1)),
         ], startPoint: .top, endPoint: .bottom))
         // Both layers stay mounted and crossfade, so the shape's size animates instead of a
         // freshly inserted full-size layer popping in.
