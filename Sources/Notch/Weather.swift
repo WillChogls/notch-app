@@ -171,7 +171,6 @@ final class WeatherModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
 struct WeatherWidget: View {
     @ObservedObject var weather: WeatherModel
-    @Environment(\.colorScheme) private var scheme
     /// Spinners show only after 0.5 s so quick loads don't flicker.
     @State private var showBusy = false
 
@@ -215,7 +214,7 @@ struct WeatherWidget: View {
                 Text(WeatherModel.temp(d.celsius)).font(.system(size: 32, weight: .semibold, design: .rounded))
                     .lineLimit(1).minimumScaleFactor(0.7)
                 Image(systemName: c.symbol).font(.system(size: 24))
-                    .symbolRenderingMode(scheme == .dark ? .multicolor : .hierarchical)
+                    .symbolRenderingMode(.multicolor)
             }
             Text(c.text).font(.system(size: 12)).foregroundStyle(.primary.opacity(0.6)).lineLimit(1)
             Text("H \(WeatherModel.temp(d.highC))  L \(WeatherModel.temp(d.lowC))")

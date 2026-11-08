@@ -2,37 +2,14 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-enum Appearance: String, CaseIterable {
-    case system, light, dark
-
-    var label: String { self == .system ? "Auto" : rawValue.capitalized }
-    var symbol: String {
-        switch self {
-        case .system: "circle.lefthalf.filled"
-        case .light: "sun.max"
-        case .dark: "moon"
-        }
-    }
-
-    static func apply(_ raw: String) {
-        NSApp.appearance = switch Appearance(rawValue: raw) {
-        case .light: NSAppearance(named: .aqua)
-        case .dark: NSAppearance(named: .darkAqua)
-        default: nil
-        }
-    }
-}
-
 /// Settings window, per Oscar's spec (Resources/design/settings-spec.md).
 struct SettingsView: View {
     @AppStorage("glassOpacity") private var opacity = 0.7
     @AppStorage("openScale") private var openScale = 1.0
-    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
     @AppStorage("musicApp") private var musicApp = Shortcut.defaultMusicApp
     @AppStorage("widget") private var widget = WidgetKind.office.rawValue
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginError: String?
-    @Environment(\.colorScheme) private var scheme
 
     static let blue = Color(red: 0.42, green: 0.55, blue: 1.0)
     static let lavender = Color(red: 0.66, green: 0.55, blue: 1.0)
@@ -49,20 +26,6 @@ struct SettingsView: View {
                           min: "minus.magnifyingglass", max: "plus.magnifyingglass")
             }
             section("General") {
-                HStack {
-                    Text("Appearance")
-                    Spacer()
-                    Picker("Appearance", selection: $appearance) {
-                        ForEach(Appearance.allCases, id: \.self) {
-                            Label($0.label, systemImage: $0.symbol).labelStyle(.titleAndIcon).tag($0.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
-                }
-                .frame(height: 44)
-                Divider()
                 musicRow
                 Divider()
                 HStack {
@@ -91,7 +54,6 @@ struct SettingsView: View {
         .frame(width: 440)
         .background(alignment: .top) { headerWash }
         .fixedSize()
-        .onChange(of: appearance) { _, value in Appearance.apply(value) }
         .onAppear {
             // Older builds stored unstepped values (e.g. 0.864); snap them to the 5% grid.
             opacity = (opacity * 20).rounded() / 20
@@ -120,7 +82,7 @@ struct SettingsView: View {
 
     private var headerWash: some View {
         LinearGradient(colors: [Self.blue, Self.lavender, Self.pink], startPoint: .leading, endPoint: .trailing)
-            .opacity(scheme == .dark ? 0.22 : 0.18)
+            .opacity(0.22)
             .frame(height: 160)
             .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
             .ignoresSafeArea()
@@ -133,7 +95,7 @@ struct SettingsView: View {
             VStack(spacing: 0, content: content)
                 .padding(.horizontal, 14)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.white.opacity(scheme == .dark ? 0.06 : 0.7)))
+                    .fill(.white.opacity(0.06)))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(.primary.opacity(0.08), lineWidth: 1))
         }

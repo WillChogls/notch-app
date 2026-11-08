@@ -21,7 +21,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        Appearance.apply(UserDefaults.standard.string(forKey: "appearance") ?? "")
+        // Always dark, whatever macOS is set to (the human's call); drop the old Appearance setting.
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+        UserDefaults.standard.removeObject(forKey: "appearance")
         // Open at login by default, once; after that the Settings toggle owns it.
         if !UserDefaults.standard.bool(forKey: "loginItemConfigured") {
             try? SMAppService.mainApp.register()
