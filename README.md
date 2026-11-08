@@ -19,8 +19,6 @@
   <a href="#settings"><b>Settings</b></a>
 </p>
 
-<br>
-
 <img src="Resources/readme/closed-open-dark.png" alt="Side by side: the closed notch with album art and equalizer bars, and the same notch opened into the full panel">
 
 ## Features
