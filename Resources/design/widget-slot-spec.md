@@ -1,5 +1,7 @@
 # Widget slot, design spec v1.1
 
+> **Dark only (2026-11-08):** the human removed light mode; any light-mode values or checks in this file are obsolete.
+
 **v1.1 (the human's answers):**
 - **Calendar:** date-only; the events variant is dropped.
 - **Weather:** uses automatic location (CoreLocation, city-level); the typed-city field is dropped.

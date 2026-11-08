@@ -1,7 +1,4 @@
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/banner-light.png">
-  <img src="Resources/readme/banner-dark.png" alt="Notch: your MacBook notch, made useful. The open panel shows now playing and the Office widget.">
-</picture>
+<img src="Resources/readme/banner-dark.png" alt="Notch: your MacBook notch, made useful. The open panel shows now playing and the Office widget.">
 
 <p align="center">
   <img src="Resources/readme/badge-macos.svg" alt="macOS 14+">
@@ -24,29 +21,22 @@
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/hero-light.gif">
-  <img src="Resources/readme/hero-dark.gif" alt="The cursor moves to the notch, the panel springs open, and the widget switches from Office to Calendar to Clock">
-</picture>
-<br><br>
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/closed-open-light.png">
-  <img src="Resources/readme/closed-open-dark.png" alt="Side by side: the closed notch with album art and equalizer bars, and the same notch opened into the full panel">
-</picture>
+<p align="center">
+  <img width="616" src="Resources/readme/hero-dark.gif" alt="The cursor moves to the notch, the panel springs open, and the widget switches from Office to Calendar to Clock">
+</p>
+
+<img src="Resources/readme/closed-open-dark.png" alt="Side by side: the closed notch with album art and equalizer bars, and the same notch opened into the full panel">
 
 ## Features
 
 <h3 align="center">🎵 Now playing, with bars that hear the music</h3>
 <p align="center">
-  Spotify and Apple Music. Artwork, a scrubbable timeline, and shuffle and repeat that light up when on.<br>
+  Spotify and Apple Music. Artwork, a scrubbable timeline, and shuffle and repeat that turn blue when on.<br>
   The bars follow the real audio, in the album's colour, and cost nothing while paused.<br>
   Plug in, and the closed notch shows a charging pill too.
 </p>
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/live-light.gif">
-  <img src="Resources/readme/live-dark.gif" alt="The closed notch with album art on the left and four equalizer bars moving to the music on the right">
-</picture>
+<img src="Resources/readme/live-dark.gif" alt="The closed notch with album art on the left and four equalizer bars moving to the music on the right">
 
 <h3 align="center">🧩 One widget, your pick</h3>
 <p align="center">
@@ -54,10 +44,7 @@
   Or choose <b>Calendar</b>, <b>Clock</b> or <b>Weather</b> for your city. Only the one you pick runs.
 </p>
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/feature-widgets-light.png">
-  <img src="Resources/readme/feature-widgets-dark.png" alt="The four widgets side by side: Office, Calendar, Clock and Weather">
-</picture>
+<img src="Resources/readme/feature-widgets-dark.png" alt="The four widgets side by side: Office, Calendar, Clock and Weather">
 
 <h3 align="center">📥 A shelf for files in transit</h3>
 <p align="center">
@@ -65,10 +52,7 @@
   The shelf survives relaunches.
 </p>
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/feature-shelf-light.png">
-  <img src="Resources/readme/feature-shelf-dark.png" alt="The shelf tab holding three files, with AirDrop and Clear buttons">
-</picture>
+<img src="Resources/readme/feature-shelf-dark.png" alt="The shelf tab holding three files, with AirDrop and Clear buttons">
 
 <h3 align="center">↗️ One click to your apps</h3>
 <p align="center">
@@ -127,13 +111,10 @@ Builds are ad-hoc signed, so macOS may ask again after you rebuild.
 
 ## Settings
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="Resources/readme/feature-settings-light.png">
-  <img src="Resources/readme/feature-settings-dark.png" alt="The Notch Settings window with Panel and General cards">
-</picture>
+<img src="Resources/readme/feature-settings-dark.png" alt="The Notch Settings window with Panel and General cards">
 
 <p align="center">
-  Panel opacity and size · Appearance · Music app · Widget · Open at login
+  Panel opacity and size · Music app · Widget · Open at login
 </p>
 
 <br>

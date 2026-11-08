@@ -1,5 +1,7 @@
 # Shuffle and Repeat toggles, design spec v2
 
+> **Dark only (2026-11-08):** the human removed light mode; any light-mode values or checks in this file are obsolete.
+
 **v2 (the human's request):**
 - **Colour:** grey when off, system blue when on. No album tint.
 - **Position:** moved from the artist line into the transport row, to the left of Previous, in the order Shuffle, Repeat, Previous, Play, Next.

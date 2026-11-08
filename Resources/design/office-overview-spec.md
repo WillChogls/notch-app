@@ -1,5 +1,7 @@
 # Office overview card, design spec v1.1
 
+> **Dark only (2026-11-08):** the human removed light mode; any light-mode values or checks in this file are obsolete.
+
 v1.1 (as built): the Working pulse is a Core Animation layer, not .symbolEffect.
 
 This card replaces `CalendarWidget` in `HomeView`. It keeps the same container: 170pt wide, 10pt padding (150pt usable), `.glass(RoundedRectangle(cornerRadius: 16, style: .continuous))`, and the same height as the now-playing card. Fonts follow the existing panel: system 11–12, with `.primary` at 1.0, 0.6 and 0.5 opacity.

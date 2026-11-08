@@ -1,5 +1,7 @@
 # Notch visual audit (phase 1, polish only)
 
+> **Dark only (2026-11-08):** the human removed light mode; any light-mode values or checks in this file are obsolete.
+
 **Next:** Jim fixes items 1–3 first. They are about 30 minutes in total and are the most visible.
 
 **Method:**
