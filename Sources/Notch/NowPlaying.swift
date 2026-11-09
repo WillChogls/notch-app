@@ -1,4 +1,5 @@
 import AppKit
+import os
 
 /// Tracks Music / Spotify via their distributed notifications (no permission needed)
 /// and uses AppleScript for controls, artwork and position (asks for Automation permission once).
@@ -21,6 +22,8 @@ final class NowPlaying: ObservableObject {
     /// Shuffle / repeat of the playing app; nil when unknown (the toggle is then hidden).
     @Published private(set) var isShuffle: Bool?
     @Published private(set) var isRepeat: Bool?
+    /// macOS refused Notch's Apple Events to the player (Automation permission off): shown instead of the toggles.
+    @Published private(set) var automationBlocked = false
 
     private var position: Double = 0
     private var positionDate = Date()
@@ -85,7 +88,8 @@ final class NowPlaying: ObservableObject {
         guard let source, source.isRunning else { isShuffle = nil; isRepeat = nil; return }
         let read = source == .spotify ? "{shuffling, repeating}" : "{shuffle enabled, (song repeat as string) is not \"off\"}"
         let started = Date()
-        runMode("tell application \"\(source.rawValue)\" to return \(read)") { [weak self] result in
+        runMode("tell application \"\(source.rawValue)\" to return \(read)") { [weak self] result, error in
+            self?.automationBlocked = error == -1743 // errAEEventNotPermitted
             guard let self, self.source == source,
                   started.timeIntervalSince(self.lastModeTap) >= Self.settle else { return } // stale: began before the app applied a tap
             let ok = (result?.numberOfItems ?? 0) == 2
@@ -151,18 +155,34 @@ final class NowPlaying: ObservableObject {
         }
     }
 
+    nonisolated private static let log = Logger(subsystem: "dev.local.notch", category: "applescript")
+
     /// Own serial queue so toggles never wait behind artwork/position scripts; scripts compile once.
-    private func runMode(_ source: String, completion: (@MainActor (NSAppleEventDescriptor?) -> Void)? = nil) {
+    /// A cached script stays bound to the player process it first reached, so once the player relaunches
+    /// every run fails: on any error the cached copy is dropped and the script runs once more, freshly compiled.
+    private func runMode(_ source: String, completion: (@MainActor (NSAppleEventDescriptor?, Int?) -> Void)? = nil) {
         modeQueue.async {
             var error: NSDictionary?
-            let script: NSAppleScript? = Self.compiled[source] ?? {
-                guard let s = NSAppleScript(source: source), s.compileAndReturnError(&error) else { return nil }
-                Self.compiled[source] = s
-                return s
-            }()
-            let result = script?.executeAndReturnError(&error)
-            DispatchQueue.main.async { MainActor.assumeIsolated { completion?(result) } }
+            var result: NSAppleEventDescriptor?
+            for attempt in 0..<2 {
+                error = nil
+                let script: NSAppleScript? = Self.compiled[source] ?? {
+                    guard let s = NSAppleScript(source: source), s.compileAndReturnError(&error) else { return nil }
+                    Self.compiled[source] = s
+                    return s
+                }()
+                result = script?.executeAndReturnError(&error)
+                guard result == nil, let error else { break }
+                Self.compiled[source] = nil
+                Self.log.error("mode script failed (attempt \(attempt + 1, privacy: .public)): \(error[NSAppleScript.errorNumber] as? Int ?? 0, privacy: .public) \(error[NSAppleScript.errorMessage] as? String ?? "", privacy: .public)")
+            }
+            let code = result == nil ? error?[NSAppleScript.errorNumber] as? Int : nil
+            DispatchQueue.main.async { MainActor.assumeIsolated { completion?(result, code) } }
         }
+    }
+
+    func openAutomationSettings() {
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!)
     }
 
     private func command(_ cmd: String) {

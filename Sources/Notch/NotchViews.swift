@@ -213,7 +213,17 @@ struct NowPlayingCard: View {
                 .glassGroup(spacing: 16)
                 // Shuffle, Repeat left of Previous (shuffle-repeat-spec v2). An unknown state keeps its slot.
                 .overlay(alignment: .leading) {
-                    if player.isShuffle != nil || player.isRepeat != nil {
+                    if player.automationBlocked {
+                        // macOS blocks Notch from reading the player: say so instead of hiding the toggles.
+                        Button(action: player.openAutomationSettings) {
+                            Image(systemName: "lock.fill").font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.primary.opacity(0.5))
+                                .frame(width: 20, height: 20).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Shuffle and Repeat need permission: allow Notch under Automation in System Settings")
+                        .accessibilityLabel("Shuffle and Repeat need Automation permission. Open System Settings")
+                    } else if player.isShuffle != nil || player.isRepeat != nil {
                         HStack(spacing: 8) {
                             ModeToggle(symbol: "shuffle", name: "Shuffle", isOn: player.isShuffle ?? false,
                                        action: player.toggleShuffle)
