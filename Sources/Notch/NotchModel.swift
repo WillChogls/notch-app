@@ -26,6 +26,9 @@ final class NotchModel: ObservableObject {
     let office = OfficeMonitor()
     let weather = WeatherModel.shared
 
+    /// Set by NotchWindowController: is the pointer really over the open panel (with a few points of slop)?
+    var pointerInsideOpenPanel: () -> Bool = { false }
+
     private var hovering = false
     private var dropTargeted = false
     private var pending: Task<Void, Never>?
@@ -72,6 +75,13 @@ final class NotchModel: ObservableObject {
                 self.state = .open
                 NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
             } else if !wantsOpen {
+                // SwiftUI reports hover "ended" whenever the content's view tree changes (removing a shelf
+                // item, Clear), with the pointer still inside. Only close once the pointer has really left;
+                // polling here, not waiting for another hover event, means it can never stick open.
+                while self.state == .open, self.pointerInsideOpenPanel() {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    if Task.isCancelled { return }
+                }
                 self.state = .closed
             }
         }

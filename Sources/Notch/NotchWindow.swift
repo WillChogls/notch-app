@@ -44,6 +44,12 @@ final class NotchWindowController {
         // sideways mid-animation, so the panel slid in from the right instead of the centre.
         host.sizingOptions = []
         panel.contentView = host
+        model.pointerInsideOpenPanel = { [weak panel, model] in
+            guard let f = panel?.frame else { return false }
+            let s = model.openSize
+            return NSRect(x: f.midX - s.width / 2, y: f.maxY - s.height, width: s.width, height: s.height)
+                .insetBy(dx: -4, dy: -4).contains(NSEvent.mouseLocation)
+        }
         reposition()
     }
 

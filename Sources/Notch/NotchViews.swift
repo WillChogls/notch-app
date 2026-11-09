@@ -353,7 +353,7 @@ struct ShelfView: View {
         } else {
             HStack(spacing: 10) {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 0) {
                         ForEach(shelf.items, id: \.self) { ShelfItem(url: $0) }
                     }
                 }
@@ -381,6 +381,7 @@ struct ShelfItem: View {
     let url: URL
     @EnvironmentObject var shelf: Shelf
     @State private var hovering = false
+    @State private var unhover: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 4) {
@@ -391,19 +392,36 @@ struct ShelfItem: View {
                 .frame(width: 76)
         }
         .padding(6)
-        .modifier(SelectedGlass(selected: hovering, shape: RoundedRectangle(cornerRadius: 12, style: .continuous)))
-        .overlay(alignment: .topTrailing) {
-            if hovering {
-                Button { shelf.remove(url) } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 14))
-                        .foregroundStyle(.white, .gray)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .onHover { hovering = $0 }
+        // Gestures sit under the X, not around it, so a click on X never waits on the double-click.
+        .contentShape(Rectangle())
         .onTapGesture(count: 2) { NSWorkspace.shared.open(url) }
         .onDrag { NSItemProvider(object: url as NSURL) }
+        // Nothing is inserted or removed on hover (glass and X only fade): changing the view tree resets
+        // hover tracking, so the item lost its hover, and its X, with the pointer still on it.
+        .background { Color.clear.glass(RoundedRectangle(cornerRadius: 12, style: .continuous)).opacity(hovering ? 1 : 0) }
+        .overlay(alignment: .topTrailing) {
+            Button { shelf.remove(url) } label: {
+                Image(systemName: "xmark.circle.fill").font(.system(size: 14))
+                    .foregroundStyle(.white, .gray)
+                    .frame(width: 24, height: 24).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .opacity(hovering ? 1 : 0)
+            .allowsHitTesting(hovering)
+            .accessibilityLabel("Remove \(url.lastPathComponent)")
+        }
+        // A few points of hover slop around the card (the strip's spacing is folded into this padding).
+        .padding(3)
+        .contentShape(Rectangle())
+        .onHover { inside in
+            unhover?.cancel()
+            if inside { hovering = true; return }
+            // Grace period: a quick move toward the X, or across the edge, keeps the item hovered.
+            unhover = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                if !Task.isCancelled { hovering = false }
+            }
+        }
         .help(url.path)
     }
 }
