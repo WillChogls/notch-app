@@ -24,11 +24,49 @@ struct OfficeRow: Equatable, Identifiable {
     let state: OfficeState
     /// Full doing text, e.g. "Needs you · Review plan" or "Active · Bash".
     let doing: String
+    var usd: Double = 0
+    var tokens: Int = 0
+    var backlog: Int = 0
+}
+
+/// A tasks.json card for the Office tab's Workload.
+struct OfficeTask: Equatable, Identifiable {
+    enum Status: Int, Comparable {
+        case blocked, doing, todo, done
+        static func < (a: Self, b: Self) -> Bool { a.rawValue < b.rawValue }
+        var label: String { ["Blocked", "Doing", "Todo", "Done"][rawValue] }
+    }
+    let id: String
+    let title: String
+    let status: Status
+    /// Display name (fleet name when known); nil when unassigned.
+    let assignee: String?
+}
+
+/// An open ASK ME question: a humanQA entry with no answer.
+struct OfficeQuestion: Equatable, Identifiable {
+    var id: String { card + "|" + String(askedAt.timeIntervalSince1970) }
+    let text: String
+    let from: String
+    let card: String
+    let askedAt: Date
+}
+
+/// Everything one read of the hive gives: the Home card uses `rows`, the Office tab all of it.
+struct OfficeFloor: Equatable {
+    var rows: [OfficeRow]
+    var usd: Double = 0
+    /// Blocked, doing, todo (file order within each), then the last 3 done; nil = tasks.json unreadable.
+    var tasks: [OfficeTask]? = []
+    /// Newest first; nil = tasks.json unreadable.
+    var questions: [OfficeQuestion]? = []
 }
 
 enum OfficeSnapshot: Equatable {
+    /// Before the first read finishes.
+    case loading
     case offline
-    case rows([OfficeRow])
+    case live(OfficeFloor)
 
     /// NOTCH_HIVE_ROOT overrides it for testing (fake or missing hive).
     static let hiveRoot = URL(fileURLWithPath: ProcessInfo.processInfo.environment["NOTCH_HIVE_ROOT"] ?? "/Users/willwhite/office/hive")
@@ -47,12 +85,40 @@ enum OfficeSnapshot: Equatable {
         let onHold: Bool?
         let lastTool: String?
         let lastActiveSecAgo: Double?
+        let usd: Double?
+        let tokens: Double?
+        let inboxBacklog: Int?
     }
     private struct Tasks: Decodable { let tasks: [Card] }
     private struct Card: Decodable {
+        let id: String?
         let title: String?
         let status: String?
         let assignee: String?
+        let doneAt: String?
+        let humanQA: [QA]?
+    }
+    private struct QA: Decodable {
+        let q: String?
+        let from: String?
+        let askedAt: String?
+        let a: String?
+    }
+
+    /// ISO 8601 with any number of fractional digits (the hive writes 3 or 6).
+    static func date(_ s: String?) -> Date? {
+        guard let s else { return nil }
+        let trimmed = s.replacingOccurrences(of: #"\.\d+"#, with: "", options: .regularExpression)
+        return ISO8601DateFormatter().date(from: trimmed)
+    }
+
+    /// Questions are markdown; the notch shows plain text on one flowing line.
+    static func plain(_ s: String) -> String {
+        s.replacingOccurrences(of: #"\[([^\]]+)\]\([^)]*\)"#, with: "$1", options: .regularExpression) // [text](url)
+            .replacingOccurrences(of: #"(?<![\w*_])[*_]{1,2}([^*_\n]+?)[*_]{1,2}(?![\w*_])"#, with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: "`", with: "")
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
     }
 
     /// Pure: state rules first-match-wins, then sort by state and name.
@@ -100,7 +166,8 @@ enum OfficeSnapshot: Equatable {
     static func parse(fleet: Data?, tasks: Data?, log: TurnLog? = nil, now: Date) -> OfficeSnapshot {
         guard let fleet, let f = try? JSONDecoder().decode(Fleet.self, from: fleet),
               now.timeIntervalSince1970 - f.ts / 1000 < staleAfter else { return .offline }
-        let cards = (tasks.flatMap { try? JSONDecoder().decode(Tasks.self, from: $0) })?.tasks ?? []
+        let decoded = (tasks.flatMap { try? JSONDecoder().decode(Tasks.self, from: $0) })?.tasks
+        let cards = decoded ?? []
         func card(_ id: String, _ status: String) -> String? {
             cards.first { $0.assignee == id && $0.status == status }.map { $0.title ?? "" }
         }
@@ -119,9 +186,29 @@ enum OfficeSnapshot: Equatable {
                 // A doing card only supplies the text; the row stays idle (dimmed).
                 (state, doing) = (.idle, card(a.id, "doing") ?? "Idle")
             }
-            return OfficeRow(id: a.id, name: a.name ?? a.id, role: a.role ?? "", state: state, doing: doing)
+            return OfficeRow(id: a.id, name: a.name ?? a.id, role: a.role ?? "", state: state, doing: doing,
+                             usd: a.usd ?? 0, tokens: Int(a.tokens ?? 0), backlog: a.inboxBacklog ?? 0)
         }
-        return .rows(rows.sorted { ($0.state, $0.name.lowercased()) < ($1.state, $1.name.lowercased()) })
+        var floor = OfficeFloor(rows: rows.sorted { ($0.state, $0.name.lowercased()) < ($1.state, $1.name.lowercased()) },
+                                usd: f.agents.reduce(0) { $0 + ($1.usd ?? 0) }, tasks: nil, questions: nil)
+        guard let decoded else { return .live(floor) }
+        let names = Dictionary(f.agents.map { ($0.id, $0.name ?? $0.id) }, uniquingKeysWith: { a, _ in a })
+        func task(_ c: Card, _ s: OfficeTask.Status) -> OfficeTask {
+            OfficeTask(id: c.id ?? "", title: c.title ?? "", status: s, assignee: c.assignee.map { names[$0] ?? $0 })
+        }
+        let statuses: [String: OfficeTask.Status] = ["blocked": .blocked, "doing": .doing, "todo": .todo]
+        let open = decoded.compactMap { c in c.status.flatMap { statuses[$0] }.map { task(c, $0) } }
+        let done = decoded.filter { $0.status == "done" }
+            .sorted { (date($0.doneAt) ?? .distantPast) > (date($1.doneAt) ?? .distantPast) }
+            .prefix(3).map { task($0, .done) }
+        floor.tasks = open.enumerated().sorted { ($0.element.status, $0.offset) < ($1.element.status, $1.offset) }.map(\.element) + done
+        floor.questions = decoded.flatMap { c in
+            (c.humanQA ?? []).compactMap { qa -> OfficeQuestion? in
+                guard qa.a == nil, let q = qa.q, let at = date(qa.askedAt) else { return nil }
+                return OfficeQuestion(text: plain(q), from: qa.from.map { names[$0] ?? $0 } ?? "", card: c.id ?? "", askedAt: at)
+            }
+        }.sorted { $0.askedAt > $1.askedAt }
+        return .live(floor)
     }
 }
 
@@ -129,9 +216,12 @@ enum OfficeSnapshot: Equatable {
 /// skips the parse when neither file changed (still re-checks staleness).
 @MainActor
 final class OfficeMonitor: ObservableObject {
-    @Published private(set) var snapshot: OfficeSnapshot = .offline
+    @Published private(set) var snapshot: OfficeSnapshot = .loading
 
     private var task: Task<Void, Never>?
+    /// Views that need live data (Home's Office card, the Office tab). Counted, so a tab switch can't
+    /// stop the poll whichever of onAppear / onDisappear runs first.
+    private var users = 0
     /// Per file: (mtime + size stamp, parsed value), so unchanged files are not re-read.
     private var cache = Cache()
 
@@ -142,9 +232,11 @@ final class OfficeMonitor: ObservableObject {
     }
 
     func setActive(_ active: Bool) {
+        users = max(0, users + (active ? 1 : -1))
+        guard (users > 0) != (task != nil) else { return }
         task?.cancel()
         task = nil
-        guard active else { return }
+        guard users > 0 else { return }
         task = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.refresh()
@@ -204,18 +296,20 @@ enum OfficeSelfCheck {
                   {"id":"2","title":"Ship it","status":"doing","assignee":"a"},
                   {"id":"3","title":"Old","status":"done","assignee":"k"}]}
         """.data(using: .utf8)!
-        guard case .rows(let rows) = OfficeSnapshot.parse(fleet: fleet, tasks: tasks, now: now) else {
+        guard case .live(let floor) = OfficeSnapshot.parse(fleet: fleet, tasks: tasks, now: now) else {
             preconditionFailure("fresh fleet read as offline")
         }
+        let rows = floor.rows
         // No log: 15 s fallback. Angela has a doing card but is quiet, so she is an idle row with its title.
         precondition(rows.map(\.name) == ["Oscar", "Pam", "Jim", "Dwight", "Angela", "Kevin"], "\(rows.map(\.name))")
         precondition(rows.map(\.doing) == ["Breaker tripped", "Needs you · Review plan", "Active · Bash", "On hold", "Ship it", "Idle"],
                      "\(rows.map(\.doing))")
         // Garbage tasks.json: fleet-only rows, no crash. Stale or missing fleet: offline.
-        guard case .rows(let bare) = OfficeSnapshot.parse(fleet: fleet, tasks: Data("{nope".utf8), now: now) else {
+        guard case .live(let bareFloor) = OfficeSnapshot.parse(fleet: fleet, tasks: Data("{nope".utf8), now: now) else {
             preconditionFailure("bad tasks.json took the card offline")
         }
-        precondition(bare.first { $0.name == "Pam" }?.state == .idle)
+        precondition(bareFloor.rows.first { $0.name == "Pam" }?.state == .idle)
+        precondition(bareFloor.tasks == nil && bareFloor.questions == nil, "bad tasks.json must read as unreadable")
         precondition(OfficeSnapshot.parse(fleet: fleet, tasks: tasks, now: now + 121) == .offline)
         precondition(OfficeSnapshot.parse(fleet: nil, tasks: tasks, now: now) == .offline)
         precondition(OfficeSnapshot.parse(fleet: Data("garbage".utf8), tasks: nil, now: now) == .offline)
@@ -243,9 +337,54 @@ enum OfficeSelfCheck {
         precondition(OfficeSnapshot.isWorking(submit: nil, end: nil, lastActiveSecAgo: 10), "missing log: fallback")
         // Idle agent with a doing card: dimmed idle row showing the card title.
         let idleLog = OfficeSnapshot.TurnLog(lastSubmit: ["a": 1], lastEnd: ["a": 2])
-        guard case .rows(let withLog) = OfficeSnapshot.parse(fleet: fleet, tasks: tasks, log: idleLog, now: now),
-              let angela = withLog.first(where: { $0.name == "Angela" }) else { preconditionFailure() }
+        guard case .live(let withLog) = OfficeSnapshot.parse(fleet: fleet, tasks: tasks, log: idleLog, now: now),
+              let angela = withLog.rows.first(where: { $0.name == "Angela" }) else { preconditionFailure() }
         precondition(angela.state == .idle && angela.doing == "Ship it", "\(angela)")
+        OfficeTabSelfCheck.run(now: now, fleet: fleet)
         print("office self-check passed")
+    }
+}
+
+/// Office tab parsing (OFF-17): workload grouping, open ASK ME questions, costs.
+enum OfficeTabSelfCheck {
+    static func run(now: Date, fleet _: Data) {
+        let ts = now.timeIntervalSince1970 * 1000
+        let fleet = """
+        {"ts": \(ts), "agents": [
+          {"id":"p","name":"Pam","usd":1.5,"tokens":340000,"inboxBacklog":2,"lastActiveSecAgo":900},
+          {"id":"j","name":"Jim","usd":2.62,"lastActiveSecAgo":900}]}
+        """.data(using: .utf8)!
+        let tasks = #"""
+        {"tasks":[
+          {"id":"OFF-1","title":"Todo one","status":"todo","assignee":"j"},
+          {"id":"OFF-2","title":"Doing","status":"doing","assignee":"p"},
+          {"id":"OFF-3","title":"Done old","status":"done","doneAt":"2026-01-01T00:00:00.000Z"},
+          {"id":"OFF-4","title":"Blocked","status":"blocked","assignee":"zed",
+           "humanQA":[{"q":"**Ship it?**\n\nRun `x`.","from":"p","askedAt":"2026-01-02T00:00:00.123456+00:00"},
+                      {"q":"answered","from":"j","askedAt":"2026-01-03T00:00:00Z","a":"yes"}]},
+          {"id":"OFF-5","title":"Done 2","status":"done","doneAt":"2026-01-05T00:00:00.000Z"},
+          {"id":"OFF-6","title":"Done 3","status":"done","doneAt":"2026-01-04T00:00:00.000Z"},
+          {"id":"OFF-7","title":"Done newest","status":"done","doneAt":"2026-01-06T00:00:00.000Z",
+           "humanQA":[{"q":"Newer","from":"j","askedAt":"2026-01-07T00:00:00.5Z"}]},
+          {"id":"OFF-8","title":"Todo two","status":"todo"},
+          {"id":"OFF-9","title":"Weird","status":"someday"}]}
+        """#.data(using: .utf8)!
+        guard case .live(let f) = OfficeSnapshot.parse(fleet: fleet, tasks: tasks, now: now),
+              let t = f.tasks, let q = f.questions else { preconditionFailure("office tab: no floor") }
+        precondition(t.map(\.id) == ["OFF-4", "OFF-2", "OFF-1", "OFF-8", "OFF-7", "OFF-5", "OFF-6"], "\(t.map(\.id))")
+        precondition(t.map(\.assignee) == ["zed", "Pam", "Jim", nil, nil, nil, nil], "assignee names: \(t.map(\.assignee))")
+        precondition(q.map(\.card) == ["OFF-7", "OFF-4"] && q.map(\.from) == ["Jim", "Pam"], "open questions: \(q)")
+        precondition(q[1].text == "Ship it? Run x.", "plain text: \(q[1].text)")
+        precondition(OfficeSnapshot.plain("Is _it_ *ok*? See [the spec](http://x) or snake_case_name.")
+                     == "Is it ok? See the spec or snake_case_name.", OfficeSnapshot.plain("Is _it_ *ok*? See [the spec](http://x) or snake_case_name."))
+        precondition(abs(f.usd - 4.12) < 0.001, "floor cost \(f.usd)")
+        let pam = f.rows.first { $0.name == "Pam" }
+        precondition(pam?.tokens == 340_000 && pam?.backlog == 2, "fleet extras")
+        precondition(OfficeSnapshot.date("2026-11-08T18:24:41.900300+00:00") != nil, "6-digit fraction")
+        // No tasks file at all: fleet rows, workload and questions unreadable.
+        guard case .live(let noTasks) = OfficeSnapshot.parse(fleet: fleet, tasks: nil, now: now) else { preconditionFailure() }
+        precondition(noTasks.rows.count == 2 && noTasks.tasks == nil)
+        precondition(OfficeAge.short(60 * 4) == "4m" && OfficeAge.short(30) == "now" && OfficeAge.short(7200) == "2h"
+                     && OfficeAge.short(3 * 86400) == "3d" && OfficeAge.badge(12) == "9+", "age / badge format")
     }
 }

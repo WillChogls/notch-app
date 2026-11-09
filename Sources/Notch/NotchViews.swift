@@ -120,6 +120,7 @@ struct OpenContent: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
+                HStack(spacing: 6) {
                 ForEach(NotchModel.Tab.allCases, id: \.self) { tab in
                     Button { model.tab = tab } label: {
                         Image(systemName: tab.symbol)
@@ -129,8 +130,18 @@ struct OpenContent: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(model.tab == tab ? .white : .white.opacity(0.5))
+                    .help(tab.label)
+                    .modifier(TabLabel(tab: tab, office: model.office))
                 }
+                }
+                .glassGroup()
+                // Outside the glass container, which composites the selected tab's glass above its content.
+                // Office is the last tab, so the group's top-trailing corner is its button's.
+                .overlay(alignment: .topTrailing) { OfficeTabBadge(office: model.office) }
                 Spacer()
+                if model.tab == .office {
+                    OfficeSummary(office: model.office).padding(.trailing, battery.hasBattery ? 6 : 0)
+                }
                 if battery.hasBattery {
                     HStack(spacing: 4) {
                         Text("\(battery.level)%").font(.system(size: 11, weight: .medium)).monospacedDigit()
@@ -141,13 +152,13 @@ struct OpenContent: View {
                 }
             }
             .padding(.horizontal, 12)
-            .glassGroup()
             .frame(height: model.notchSize.height)
 
             Group {
                 switch model.tab {
                 case .home: HomeView()
                 case .shelf: ShelfView()
+                case .office: OfficeTab(office: model.office)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -20,11 +20,14 @@ struct OfficeCard: View {
 
     @ViewBuilder private var content: some View {
         switch office.snapshot {
+        case .loading:
+            Color.clear
         case .offline:
             placeholder("moon.zzz", "Office offline", detail: "Munder Difflin isn't running")
-        case .rows(let rows) where rows.isEmpty:
+        case .live(let floor) where floor.rows.isEmpty:
             placeholder("person.2", "No one in the office")
-        case .rows(let rows):
+        case .live(let floor):
+            let rows = floor.rows
             GeometryReader { geo in
                 let maxRows = max(1, Int((geo.size.height - 20) / 20))
                 let overflow = rows.count > maxRows
@@ -81,6 +84,8 @@ struct OfficeCard: View {
 
 struct OfficeRowView: View {
     let row: OfficeRow
+    /// Office tab: inbox backlog badge and a cost line in the tooltip.
+    var detailed = false
 
     private var color: Color {
         switch row.state {
@@ -114,10 +119,21 @@ struct OfficeRowView: View {
             Text(row.doing).font(.system(size: 11))
                 .foregroundStyle(row.state <= .blocked ? AnyShapeStyle(color) : AnyShapeStyle(.primary.opacity(0.6)))
                 .lineLimit(1).truncationMode(.tail)
+            if detailed && row.backlog > 0 {
+                Spacer(minLength: 0)
+                Text(row.backlog > 99 ? "99+" : "\(row.backlog)")
+                    .font(.system(size: 9, weight: .semibold)).monospacedDigit()
+                    .foregroundStyle(.primary.opacity(0.7))
+                    .padding(.horizontal, 4).frame(minWidth: 13, minHeight: 13)
+                    .background(Capsule().fill(.white.opacity(0.12)))
+                    .fixedSize()
+            }
         }
         .frame(height: 18)
+        .frame(maxWidth: detailed ? .infinity : nil, alignment: .leading)
         .opacity(row.state >= .paused ? 0.55 : 1)
-        .help("\(row.name)\(row.role.isEmpty ? "" : " · " + row.role)\n\(row.state.label): \(row.doing)")
+        .help("\(row.name)\(row.role.isEmpty ? "" : " · " + row.role)\n\(row.state.label): \(row.doing)"
+              + (detailed ? "\n\(OfficeAge.usd(row.usd)) · \(OfficeAge.tokens(row.tokens)) tokens · \(row.backlog) unread" : ""))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(row.name), \(row.state.label), \(row.doing)")
     }

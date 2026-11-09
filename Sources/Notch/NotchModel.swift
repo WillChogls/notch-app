@@ -6,8 +6,9 @@ import SwiftUI
 final class NotchModel: ObservableObject {
     enum State { case closed, open }
     enum Tab: String, CaseIterable {
-        case home, shelf
-        var symbol: String { self == .home ? "house.fill" : "tray.full.fill" }
+        case home, shelf, office
+        var symbol: String { ["house.fill", "tray.full.fill", "building.2.fill"][Self.allCases.firstIndex(of: self)!] }
+        var label: String { rawValue.capitalized }
     }
 
     @Published var state: State = .closed
