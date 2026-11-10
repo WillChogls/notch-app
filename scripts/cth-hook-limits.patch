@@ -1,0 +1,21 @@
+--- a/hive/bin/cth-hook.cjs
++++ b/hive/bin/cth-hook.cjs
+@@ -23,6 +23,18 @@
+       const pct = Math.round((used / size) * 100);
+       process.stdout.write('ctx ' + Math.round(used / 1000) + 'k/' + Math.round(size / 1000) + 'k (' + pct + '%)');
+     }
++    // Notch (OFF-18): save the account's rate limits for the Office tab's Limits card.
++    // After the gauge is printed, atomic (tmp + rename), never throws.
++    try {
++      const rl = payload.rate_limits;
++      if (rl && (rl.five_hour || rl.seven_day)) {
++        const fs = require('fs'), path = require('path');
++        const out = path.join(__dirname, '..', 'usage-limits.json');
++        const tmp = out + '.' + process.pid + '.tmp';
++        fs.writeFileSync(tmp, JSON.stringify({ ts: Date.now(), rate_limits: rl }));
++        fs.renameSync(tmp, out);
++      }
++    } catch (_) {}
+     if (sock) {
+       try {
+         const c = net.createConnection(sock, () => { c.end(JSON.stringify(payload) + '\n'); });

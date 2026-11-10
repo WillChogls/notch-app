@@ -34,11 +34,21 @@
 
 <h3 align="center">🧩 One widget, your pick</h3>
 <p align="center">
-  <b>Office</b> shows your agents live in Munder Difflin, an agent management app.<br>
+  <b>Office</b> shows your agents live in Munder Difflin, an agent management app. More in the <a href="#office-tab">Office tab</a>.<br>
   Or choose <b>Calendar</b>, <b>Clock</b> or <b>Weather</b> for your city. Only the one you pick runs.
 </p>
 
 <img src="Resources/readme/feature-widgets-dark.png" alt="The four widgets side by side: Office, Calendar, Clock and Weather">
+
+<a id="office-tab"></a>
+<h3 align="center">🏢 The Office tab</h3>
+<p align="center">
+  A third tab for the whole floor: <b>Agents</b> and what each is doing, your Claude <b>Session (5 h)</b> and <b>Weekly</b> limits, and <b>Ask me</b> for questions waiting on you.<br>
+  An orange badge on the tab counts those questions. A pixel pet beside the tabs shows the mood:<br>
+  a <b>!</b> when something needs you, tired at 90% of a limit, hopping while agents work, idle when all is quiet, asleep when Munder Difflin is closed.
+</p>
+
+<img src="Resources/readme/feature-office-dark.png" alt="The Office tab: agents and what each is doing, Session and Weekly usage limits, an Ask me question, the orange question badge and the pixel pet">
 
 <h3 align="center">📥 A shelf for files in transit</h3>
 <p align="center">
@@ -82,6 +92,22 @@ Notch builds, copies itself to `/Applications` and launches. It lives in the men
 | `./build.sh` | Builds `build/Notch.app` (ad-hoc signed) |
 | `./build.sh run` | Builds and launches it from `build/` |
 | `./build.sh install` | Builds, installs to `/Applications` and launches |
+
+</details>
+
+<details>
+<summary><b>Office tab limits: setup and repair</b></summary>
+<br>
+
+The Limits card reads `hive/usage-limits.json`. Munder Difflin's status line saves it on every agent reply once the patch in `scripts/` is applied to its hook. From this folder (the hive lives in `~/office`):
+
+```bash
+patch -d ~/office -p1 -R -s -f --dry-run < scripts/cth-hook-limits.patch >/dev/null 2>&1 || patch -d ~/office -p1 -N < scripts/cth-hook-limits.patch
+```
+
+It applies the patch only when it is missing, so running it again changes nothing. A Munder Difflin restart or update can replace the hook and drop the patch. The card then turns **stale** (an amber "2 d ago · /usage") instead of updating; run the command again.
+
+Without the live file, Notch falls back to the last `/usage` numbers in `~/.claude.json`, always marked stale. It reads only the `cachedUsageUtilization` key, and never touches the Keychain or the network.
 
 </details>
 
