@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template: install-limits-watcher.sh fills the __PLACEHOLDERS__. Runs the script when the hook file changes. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>__LABEL__</string>
+    <key>ProgramArguments</key>
+    <array><string>/bin/sh</string><string>__SCRIPT__</string></array>
+    <key>EnvironmentVariables</key>
+    <dict><key>NOTCH_HIVE_ROOT</key><string>__HIVE__</string></dict>
+    <key>WatchPaths</key>
+    <array><string>__HIVE__/bin/cth-hook.cjs</string></array>
+    <key>RunAtLoad</key><true/>
+    <key>ThrottleInterval</key><integer>5</integer>
+    <key>ProcessType</key><string>Background</string>
+</dict>
+</plist>

@@ -111,6 +111,26 @@ Without the live file, Notch falls back to the last `/usage` numbers in `~/.clau
 
 </details>
 
+<details>
+<summary><b>Limits card: keeping the hook patch alive</b></summary>
+<br>
+
+Munder Difflin rewrites its hook when it starts, spawns an agent or saves tasks, which drops the patch. A small LaunchAgent (a background job run by macOS) puts it back each time the hook changes. It doesn't poll, and it doesn't use the network or `sudo`.
+
+1. Install, from this folder:
+   ```bash
+   scripts/install-limits-watcher.sh install
+   ```
+2. Check `~/Library/Logs/notch-limits-patch.log`. Each rewrite adds one `APPLIED` line. A `REFUSED` line means the hook no longer looks as expected, so it was left alone and the card goes stale. A single `REFUSED: no hook` just before an `APPLIED` line is harmless: the hook was briefly deleted while being rewritten.
+3. Uninstall:
+   ```bash
+   scripts/install-limits-watcher.sh uninstall
+   ```
+
+The watcher runs the script from this folder, so uninstall it before you move or delete the folder. Remove the watcher once Munder Difflin saves the limits itself.
+
+</details>
+
 ## Permissions
 
 Notch asks for each permission only when a feature first needs it, and records nothing.
