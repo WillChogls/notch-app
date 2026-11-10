@@ -25,7 +25,8 @@
 
 <h3 align="center">🎵 Now playing, with bars that hear the music</h3>
 <p align="center">
-  Spotify and Apple Music. Artwork, a scrubbable timeline, and shuffle and repeat that turn blue when on.<br>
+  Spotify and Apple Music. Artwork, a scrubbable timeline, and shuffle and repeat that light up in your accent colour when on.<br>
+  If macOS blocks access to the player, a lock button takes you to the right Privacy setting.<br>
   The bars follow the real audio, in the album's colour, and cost nothing while paused.<br>
   Plug in, and the closed notch shows a charging pill too.
 </p>
@@ -44,19 +45,22 @@
 <h3 align="center">🏢 The Office tab</h3>
 <p align="center">
   A third tab for the whole floor: <b>Agents</b> and what each is doing, your Claude <b>Session (5 h)</b> and <b>Weekly</b> limits, and <b>Ask me</b> for questions waiting on you.<br>
+  The limit bars turn red-orange from 80%, and old numbers are marked stale in amber.<br>
+  The refresh arrow re-reads them and checks the setup, then says what it found: updated, up to date, or what to fix.<br>
   An orange badge on the tab counts those questions. A pixel pet beside the tabs shows the mood:<br>
   a <b>!</b> when something needs you, tired at 90% of a limit, hopping while agents work, idle when all is quiet, asleep when Munder Difflin is closed.
 </p>
 
-<img src="Resources/readme/feature-office-dark.png" alt="The Office tab: agents and what each is doing, Session and Weekly usage limits, an Ask me question, the orange question badge and the pixel pet">
+<img src="Resources/readme/feature-office-dark.png" alt="The Office tab: agents and what each is doing, Session and Weekly usage limits with the refresh arrow, an Ask me question, the orange question badge and the pixel pet">
 
 <h3 align="center">📥 A shelf for files in transit</h3>
 <p align="center">
   Drop files on the notch, drag them out where you need them, or AirDrop them all at once.<br>
+  Hover a file for its X, or Clear the lot.<br>
   The shelf survives relaunches.
 </p>
 
-<img src="Resources/readme/feature-shelf-dark.png" alt="The shelf tab holding three files, with AirDrop and Clear buttons">
+<img src="Resources/readme/feature-shelf-dark.png" alt="The shelf tab holding three files, one hovered with its remove X, plus AirDrop and Clear buttons">
 
 <h3 align="center">↗️ One click to your apps</h3>
 <p align="center">
@@ -105,7 +109,7 @@ The Limits card reads `hive/usage-limits.json`. Munder Difflin's status line sav
 patch -d ~/office -p1 -R -s -f --dry-run < scripts/cth-hook-limits.patch >/dev/null 2>&1 || patch -d ~/office -p1 -N < scripts/cth-hook-limits.patch
 ```
 
-It applies the patch only when it is missing, so running it again changes nothing. A Munder Difflin restart or update can replace the hook and drop the patch. The card then turns **stale** (an amber "2 d ago · /usage") instead of updating; run the command again.
+It applies the patch only when it is missing, so running it again changes nothing. A Munder Difflin restart or update can replace the hook and drop the patch. The card then turns **stale** (an amber "2 d ago · /usage") instead of updating, and the card's refresh arrow says "Hook patch missing"; run the command again.
 
 Without the live file, Notch falls back to the last `/usage` numbers in `~/.claude.json`, always marked stale. It reads only the `cachedUsageUtilization` key, and never touches the Keychain or the network.
 
