@@ -44,7 +44,7 @@ struct OfficeTab: View {
                 SummaryRow(floor: floor)
                 HStack(spacing: 8) {
                     AgentsCard(floor: floor).officeCard(width: 180, label: "Agents, \(floor.rows.count)")
-                    LimitsCard(limits: office.limits).officeCard(width: 188, label: "Limits")
+                    LimitsCard(limits: office.limits, check: office.checkLimits).officeCard(width: 188, label: "Limits")
                     AskCard(questions: floor.questions)
                         .officeCard(width: 150, label: "Ask me, \(floor.questions?.count ?? 0) open")
                 }
@@ -189,8 +189,41 @@ private struct AgentRow: View {
 private struct LimitsCard: View {
     /// nil: not read yet (loading). `.some(nil)`: unavailable.
     let limits: UsageLimits??
+    let check: () async -> LimitsCheck
+    @State private var checking = false
+    @State private var result: LimitsCheck?
+    @State private var run: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One check at a time; a click during a toast drops it and checks again (spec v1.2 §4b).
+    private func refresh() {
+        guard !checking else { return }
+        run?.cancel()
+        withAnimation(.easeOut(duration: 0.2)) { result = nil }
+        checking = true
+        run = Task {
+            let start = Date.now
+            let r = await check()
+            let wait = 0.6 - Date.now.timeIntervalSince(start)
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+            checking = false
+            withAnimation(.easeOut(duration: 0.2)) { result = r }
+            AccessibilityNotification.Announcement(LimitsToast.text(r)).post()
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) { result = nil }
+        }
+    }
 
     var body: some View {
+        card.overlay(alignment: .bottom) {
+            if let result {
+                LimitsToast(result: result).padding(.horizontal, -4).padding(.bottom, -4).transition(.opacity)
+            }
+        }
+    }
+
+    private var card: some View {
         TimelineView(.everyMinute) { context in
             let now = context.date
             VStack(alignment: .leading, spacing: 2) {
@@ -222,7 +255,21 @@ private struct LimitsCard: View {
         }
     }
 
-    @ViewBuilder private func header(_ now: Date) -> some View {
+    private func header(_ now: Date) -> some View {
+        HStack(spacing: 6) {
+            if checking {
+                Text("Checking…").font(.system(size: 10, weight: .medium)).foregroundStyle(Warm.clay)
+            } else {
+                age(now)
+            }
+            Button(action: refresh) { EmptyView() }
+                .buttonStyle(RefreshStyle(checking: checking, reduceMotion: reduceMotion))
+                .help("Refresh limits")
+                .accessibilityLabel("Refresh limits")
+        }
+    }
+
+    @ViewBuilder private func age(_ now: Date) -> some View {
         if case .some(.some(let l)) = limits {
             let age = LimitsText.age(now.timeIntervalSince(l.updated))
             if l.stale(now: now) {
@@ -232,6 +279,113 @@ private struct LimitsCard: View {
                 Text(age == "now" ? "Updated now" : "Updated \(age)").font(.system(size: 10, weight: .medium)).foregroundStyle(Warm.ink3)
             }
         }
+    }
+}
+
+/// arrow.clockwise, 16pt frame, 24pt hit area; spins in Core Animation while checking.
+private struct RefreshStyle: ButtonStyle {
+    let checking: Bool, reduceMotion: Bool
+    @State private var hover = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed && !checking
+        let tint = checking ? NSColor(Warm.clay).withAlphaComponent(reduceMotion ? 0.4 : 1)
+            : NSColor(Warm.ink).withAlphaComponent(hover ? 1 : 0.5)
+        SpinningIcon(color: tint, spinning: checking && !reduceMotion)
+            .frame(width: 16, height: 16)
+            .background(Circle().fill(Warm.ink.opacity(pressed ? 0.16 : hover && !checking ? 0.10 : 0)).frame(width: 20, height: 20))
+            .scaleEffect(pressed && !reduceMotion ? 0.92 : 1)
+            .animation(.easeOut(duration: 0.15), value: hover)
+            .animation(.spring(duration: 0.15), value: pressed)
+            .padding(4).contentShape(Rectangle()).padding(-4)
+            .onHover { hover = $0 }
+    }
+}
+
+/// The symbol as a mask over a coloured layer, so the window server spins it (no per-frame app work).
+private struct SpinningIcon: NSViewRepresentable {
+    let color: NSColor, spinning: Bool
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.wantsLayer = true
+        let icon = CALayer(), mask = CALayer()
+        icon.frame = CGRect(x: 0, y: 0, width: 16, height: 16)
+        mask.frame = icon.bounds
+        mask.contentsGravity = .center
+        mask.contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+        mask.contents = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 11, weight: .semibold))
+        icon.mask = mask
+        view.layer?.addSublayer(icon)
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        guard let icon = view.layer?.sublayers?.first else { return }
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        icon.backgroundColor = color.cgColor
+        CATransaction.commit()
+        if spinning, icon.animation(forKey: "spin") == nil {
+            let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+            spin.fromValue = 0
+            spin.toValue = -2 * Double.pi   // clockwise (layer y points up)
+            spin.duration = 0.8
+            spin.repeatCount = .infinity
+            icon.add(spin, forKey: "spin")
+        } else if !spinning {
+            icon.removeAnimation(forKey: "spin")
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSView, context: Context) -> CGSize? { CGSize(width: 16, height: 16) }
+}
+
+/// The refresh result, 3 s at the bottom of the card, covering the Weekly meter.
+private struct LimitsToast: View {
+    let result: LimitsCheck
+
+    static func text(_ r: LimitsCheck) -> String {
+        switch r {
+        case .updated: "Updated just now"
+        case .upToDate(let age):
+            "Up to date. Last agent update \(LimitsText.age(age) == "now" ? "just now" : LimitsText.age(age))"
+        case .waiting: "No new data. Limits update when an agent replies"
+        case .hookMissing: "Hook patch missing. Run apply-limits-patch.sh"
+        case .watcherOff: "Watcher not loaded. Run install-limits-watcher.sh"
+        case .failed: "Can't read limits file"
+        }
+    }
+
+    var body: some View {
+        let (symbol, tint): (String, Color) = switch result {
+        case .updated: ("checkmark.circle.fill", Warm.clay)
+        case .upToDate: ("checkmark.circle", Warm.ink3)
+        case .waiting: ("clock", Warm.ink3)
+        case .hookMissing, .watcherOff: ("exclamationmark.triangle.fill", Warm.amber)
+        case .failed: ("xmark.octagon.fill", Warm.ember)
+        }
+        let help: String = switch result {
+        case .hookMissing: "~/notch/scripts/apply-limits-patch.sh"
+        case .watcherOff: "~/notch/scripts/install-limits-watcher.sh install"
+        default: Self.text(result)
+        }
+        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+        HStack(spacing: 6) {
+            Image(systemName: symbol).font(.system(size: 10, weight: .semibold)).foregroundStyle(tint)
+            Text(Self.text(result)).font(.system(size: 10, weight: .medium)).foregroundStyle(Warm.ink)
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity).frame(height: 46)
+        .background(shape.fill(Warm.hex(0x221E1B)))
+        .overlay(shape.stroke(Warm.ink.opacity(0.12), lineWidth: 0.5))
+        .help(help)
+        .accessibilityElement(children: .ignore)   // .combine read the help twice
+        .accessibilityLabel(Self.text(result))
+        .accessibilityHint(help == Self.text(result) ? "" : help)   // the command, once; no echo of the label
+        .accessibilityAddTraits(.isStaticText)
     }
 }
 

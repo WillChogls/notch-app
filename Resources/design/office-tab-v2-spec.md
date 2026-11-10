@@ -1,4 +1,6 @@
-# Office tab v2, design spec v1.1 (OFF-18)
+# Office tab v2, design spec v1.2 (OFF-18, OFF-21)
+
+> **v1.2 (2026-11-10):** adds the Limits refresh button (section 4b).
 
 > **v1.1 (2026-11-09):** the token chart is cancelled. The middle card is now the Limits card (section 4). Ignore the stack palette (section 2) and the Agents row swatch (section 6); both are cut.
 
@@ -91,6 +93,51 @@ Mockup: `office-tab-v2-limits-mockup.png`. Data rules: `office-tab-v2-limits.md`
 - **Look:** sleepy eyes (as in Idle) plus a 4-cell sweat drop in #8FC7FF at cells (13,5), (13,6), (12,6), (13,7). There is no hop. The antenna tip is dim and static.
 - **Priority:** Blocked, then Tired, then Working, then Idle; offline is Asleep.
 - **Motion and accessibility:** no motion in any setting, and Reduce Motion is the same. The pet's `.help` reads "Weekly limit at 92%".
+
+## 4b. Limits refresh button (v1.2, OFF-21)
+Mockup: `limits-refresh-mockup.png`. Logic and result rules: `limits-refresh-plan.md` §2.
+
+**Header (14pt):** `HStack(spacing: 6)` containing "Limits", a Spacer, the "Updated Xm ago" label, then the button. "Updated 1m ago" plus the button takes about 92pt, leaving 70pt free in a 168pt row, so nothing truncates.
+
+**Button:**
+- `arrow.clockwise`, system 11 semibold, in a 16×16 layout frame. The hit area is 24pt: `.padding(4).contentShape(Rectangle()).padding(-4)`, the same trick as the shuffle and repeat buttons.
+- Colours by state:
+  - Idle: `ink` at 0.5.
+  - Hover: `ink` at 1.0 plus a 20pt circle in `ink` at 0.10.
+  - Pressed: scale 0.92, circle at 0.16.
+  - Disabled while a check runs: clicks are ignored, so only one check runs at a time.
+- Tooltip `.help("Refresh limits")`; VoiceOver label "Refresh limits", trait button.
+
+**Checking:**
+- The header label reads "Checking…" in `clay`, and the icon turns `clay`.
+- Spin: a Core Animation `transform.rotation.z`, 0 to 2π, 0.8s per turn, linear, repeating.
+- It spins for **at least 0.6s** and stops when the check is done. On stop, remove the animation; the snap back to 0 is invisible on a circular arrow.
+- **Reduce Motion:** no spin. The icon is `clay` at 0.4 and the label still reads "Checking…".
+
+**Result toast**, shown for 3s:
+- Position: an `.overlay(alignment: .bottom)` on the card, inset 6pt at the sides and bottom, **46pt high**. It covers exactly the Weekly meter; the Session meter stays visible.
+- Shape: `RoundedRectangle(cornerRadius: 8, style: .continuous)` filled #221E1B (opaque, so no bar shows through), with a 0.5pt stroke in `ink` at 0.12.
+- Content: `HStack(spacing: 6)`, vertically centred, 8pt horizontal padding.
+  - Icon in system 10 semibold.
+  - Text in system 10 medium `ink`, at most 2 lines, about 140pt wide.
+- Motion: opacity 0 to 1 over 0.2s, holds 3s, then fades out over 0.2s. With Reduce Motion it is the same; a fade is allowed.
+- A new click during a toast cancels it and starts a fresh check.
+
+| Result | Icon | Icon colour | Toast text | Header label after |
+|---|---|---|---|---|
+| Updated | `checkmark.circle.fill` | `clay` | Updated just now | "Updated now" |
+| Up to date | `checkmark.circle` | `ink3` | Up to date. Last agent update 4m ago | unchanged |
+| Waiting | `clock` | `ink3` | No new data. Limits update when an agent replies | unchanged |
+| Hook missing | `exclamationmark.triangle.fill` | `amber` | Hook patch missing. Run apply-limits-patch.sh | unchanged |
+| Watcher off | `exclamationmark.triangle.fill` | `amber` | Watcher not loaded. Run install-limits-watcher.sh | unchanged |
+| Failed | `xmark.octagon.fill` | `ember` | Can't read limits file | unchanged |
+
+- **Commands:** the toast shows the short script name only. The toast's `.help` holds the full command, ready to copy:
+  - `scripts/apply-limits-patch.sh`
+  - `scripts/install-limits-watcher.sh install`
+- **VoiceOver:** post `AccessibilityNotification.Announcement` with the toast text. The meters keep their labels.
+- **No new hues:** every colour is an existing v2 token.
+- **When the card is "Usage unavailable":** the button still shows in the header, because a check can explain why. The toast is placed the same way, at the bottom of the card.
 
 ## 5. Pet (original design: a round clay sprout with an antenna)
 This is an original critter: a round body, a single antenna with a glowing tip, and stubby feet. It does not trace or copy any Anthropic mascot or logo, and no image asset is added.

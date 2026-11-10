@@ -74,6 +74,39 @@ struct UsageLimits: Equatable, Sendable {
     }
 }
 
+/// Result of the Limits card's refresh button (OFF-21, spec v1.2 §4b). Read-only checks, no repair.
+enum LimitsCheck: Equatable, Sendable {
+    case updated, upToDate(age: TimeInterval), waiting, hookMissing, watcherOff, failed
+
+    nonisolated static let hookMarker = "Notch (OFF-18)"
+    nonisolated static let watcherLabel = ProcessInfo.processInfo.environment["NOTCH_WATCHER_LABEL"] ?? "dev.notch.limits-patch"
+
+    /// fileAge nil: no usage-limits.json. fileReadable false: it exists but won't parse.
+    /// Broken file first, then the chain (hook, watcher), then what the data says.
+    static func diagnose(fileAge: TimeInterval?, fileReadable: Bool, hookPatched: Bool, watcherLoaded: Bool, changed: Bool) -> LimitsCheck {
+        if fileAge != nil && !fileReadable { return .failed }
+        if !hookPatched { return .hookMissing }
+        if !watcherLoaded { return .watcherOff }
+        if changed { return .updated }
+        guard let fileAge, fileAge <= 1800 else { return .waiting }
+        return .upToDate(age: fileAge)
+    }
+
+    /// Exit code 0 from `launchctl print` = loaded. 2 s timeout; a hung launchctl counts as loaded (no false alarm).
+    nonisolated static func watcherIsLoaded() -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        p.arguments = ["print", "gui/\(getuid())/\(watcherLabel)"]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        let done = DispatchSemaphore(value: 0)
+        p.terminationHandler = { _ in done.signal() }
+        guard (try? p.run()) != nil else { return true }
+        if done.wait(timeout: .now() + 2) == .timedOut { p.terminate(); return true }
+        return p.terminationStatus == 0
+    }
+}
+
 extension UsageLimits.Meter {
     func passed(_ now: Date) -> Bool { resetsAt.map { now >= $0 } ?? false }
 }
@@ -109,6 +142,16 @@ enum UsageLimitsSelfCheck {
         for bad in [nil, d("{bad"), d("{}"), d(#"{"ts":1,"rate_limits":{}}"#), d(#"{"cachedUsageUtilization":null}"#)] {
             precondition(UsageLimits.parseLive(bad) == nil && UsageLimits.parseCache(bad) == nil, "bad input")
         }
+        // Refresh button decision table (OFF-21), one line per row.
+        func dx(_ age: TimeInterval?, _ ok: Bool = true, hook: Bool = true, watcher: Bool = true, changed: Bool = false) -> LimitsCheck {
+            LimitsCheck.diagnose(fileAge: age, fileReadable: ok, hookPatched: hook, watcherLoaded: watcher, changed: changed)
+        }
+        precondition(dx(60, changed: true) == .updated, "updated")
+        precondition(dx(240) == .upToDate(age: 240) && dx(1800) == .upToDate(age: 1800), "up to date")
+        precondition(dx(1801) == .waiting && dx(nil) == .waiting, "waiting")
+        precondition(dx(60, hook: false, changed: true) == .hookMissing && dx(nil, hook: false, watcher: false) == .hookMissing, "hook")
+        precondition(dx(60, watcher: false) == .watcherOff, "watcher")
+        precondition(dx(60, false, hook: false) == .failed && dx(nil, false) == .waiting, "failed")
         precondition(LimitsText.resetsIn(2 * 3600 + 5 * 60) == "resets in 2 h 05 m" && LimitsText.resetsIn(45 * 60 + 10) == "resets in 46 m"
                      && LimitsText.age(30) == "now" && LimitsText.age(2 * 86400 + 5) == "2 d ago" && LimitsText.age(300) == "5m ago", "text")
     }

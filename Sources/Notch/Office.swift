@@ -288,6 +288,36 @@ final class OfficeMonitor: ObservableObject {
         }
     }
 
+    /// Limits baseline for "Updated": the value at the last refresh click (or before the first one).
+    private var lastChecked: UsageLimits?? = nil
+
+    /// Refresh button (OFF-21): re-read both limits sources now, then run the read-only checks.
+    /// Never writes, never repairs, no network. The card allows one call at a time.
+    func checkLimits() async -> LimitsCheck {
+        let root = OfficeSnapshot.hiveRoot
+        let before = lastChecked ?? limits
+        let (live, claude, age, readable, hook, watcher) = await Task.detached(priority: .userInitiated) {
+            let url = root.appendingPathComponent(UsageLimits.liveFile)
+            let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+            let mtime = attrs?[.modificationDate] as? Date
+            let stamp = mtime.map { "\($0.timeIntervalSince1970)|\(attrs?[.size] as? Int ?? 0)" }
+            let live = UsageLimits.parseLive(try? Data(contentsOf: url))
+            let cAttrs = try? FileManager.default.attributesOfItem(atPath: UsageLimits.cacheURL.path)
+            let cStamp = (cAttrs?[.modificationDate] as? Date).map { "\($0.timeIntervalSince1970)|\(cAttrs?[.size] as? Int ?? 0)" }
+            let claude = UsageLimits.parseCache(try? Data(contentsOf: UsageLimits.cacheURL))
+            let hookText = (try? String(contentsOf: root.appendingPathComponent("bin/cth-hook.cjs"), encoding: .utf8)) ?? ""
+            return ((stamp, live), (cStamp, claude), mtime.map { Date.now.timeIntervalSince($0) }, live != nil,
+                    hookText.contains(LimitsCheck.hookMarker), LimitsCheck.watcherIsLoaded())
+        }.value
+        cache.live = live
+        cache.claude = claude
+        let now = UsageLimits.pick(live.1, claude.1)
+        if limits != .some(now) { limits = .some(now) }
+        lastChecked = .some(now)
+        let changed = now != nil && before != nil && before != .some(now)   // a vanished file is "no new data", not "updated"
+        return LimitsCheck.diagnose(fileAge: age, fileReadable: readable, hookPatched: hook, watcherLoaded: watcher, changed: changed)
+    }
+
     /// Last 256 KB of the append-only log, never the whole file.
     nonisolated static func readLogTail(_ url: URL) -> OfficeSnapshot.TurnLog? {
         guard let h = try? FileHandle(forReadingFrom: url) else { return nil }
