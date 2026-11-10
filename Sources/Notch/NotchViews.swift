@@ -138,10 +138,10 @@ struct OpenContent: View {
                 // Outside the glass container, which composites the selected tab's glass above its content.
                 // Office is the last tab, so the group's top-trailing corner is its button's.
                 .overlay(alignment: .topTrailing) { OfficeTabBadge(office: model.office) }
-                Spacer()
                 if model.tab == .office {
-                    OfficeSummary(office: model.office).padding(.trailing, battery.hasBattery ? 6 : 0)
+                    OfficePet(office: model.office).padding(.leading, 2)   // 8pt after the last tab
                 }
+                Spacer()
                 if battery.hasBattery {
                     HStack(spacing: 4) {
                         Text("\(battery.level)%").font(.system(size: 11, weight: .medium)).monospacedDigit()

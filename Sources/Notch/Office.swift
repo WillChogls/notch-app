@@ -217,6 +217,16 @@ enum OfficeSnapshot: Equatable {
 @MainActor
 final class OfficeMonitor: ObservableObject {
     @Published private(set) var snapshot: OfficeSnapshot = .loading
+    /// Limits card (OFF-18): nil until the first read; `.none` inside means unavailable.
+    @Published private(set) var limits: UsageLimits?? = nil
+    /// Only the Office tab wants limits; Home's card doesn't, so its poll never touches them.
+    private var limitsWanted = false
+
+    /// The Office tab calls this on appear/disappear; reads at once if the poll is already running.
+    func wantLimits(_ on: Bool) {
+        limitsWanted = on
+        if on, task != nil { Task { await refresh() } }
+    }
 
     private var task: Task<Void, Never>?
     /// Views that need live data (Home's Office card, the Office tab). Counted, so a tab switch can't
@@ -229,6 +239,8 @@ final class OfficeMonitor: ObservableObject {
         var fleet: (String?, Data?) = (nil, nil)
         var tasks: (String?, Data?) = (nil, nil)
         var log: (String?, OfficeSnapshot.TurnLog?) = (nil, nil)
+        var live: (String?, UsageLimits?) = (nil, nil)
+        var claude: (String?, UsageLimits?) = (nil, nil)
     }
 
     func setActive(_ active: Bool) {
@@ -247,10 +259,11 @@ final class OfficeMonitor: ObservableObject {
 
     private func refresh() async {
         let root = OfficeSnapshot.hiveRoot
-        let old = cache
+        let old = cache, wantLimits = limitsWanted
         let (new, snap) = await Task.detached(priority: .utility) { () -> (Cache, OfficeSnapshot) in
-            func stamp(_ name: String) -> String? {
-                guard let attrs = try? FileManager.default.attributesOfItem(atPath: root.appendingPathComponent(name).path),
+            func stamp(_ name: String) -> String? { stampAt(root.appendingPathComponent(name)) }
+            func stampAt(_ url: URL) -> String? {
+                guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
                       let date = attrs[.modificationDate] as? Date else { return nil }
                 return "\(date.timeIntervalSince1970)|\(attrs[.size] as? Int ?? 0)"
             }
@@ -259,11 +272,20 @@ final class OfficeMonitor: ObservableObject {
             if fs != c.fleet.0 { c.fleet = (fs, try? Data(contentsOf: root.appendingPathComponent("fleet.json"))) }
             if ts != c.tasks.0 { c.tasks = (ts, try? Data(contentsOf: root.appendingPathComponent("tasks.json"))) }
             if ls != c.log.0 { c.log = (ls, Self.readLogTail(root.appendingPathComponent("log.jsonl"))) }
+            if wantLimits {
+                let us = stamp(UsageLimits.liveFile), cs = stampAt(UsageLimits.cacheURL)
+                if us != c.live.0 { c.live = (us, UsageLimits.parseLive(try? Data(contentsOf: root.appendingPathComponent(UsageLimits.liveFile)))) }
+                if cs != c.claude.0 { c.claude = (cs, UsageLimits.parseCache(try? Data(contentsOf: UsageLimits.cacheURL))) }
+            }
             return (c, OfficeSnapshot.parse(fleet: c.fleet.1, tasks: c.tasks.1, log: c.log.1, now: .now))
         }.value
         guard !Task.isCancelled else { return }
         cache = new
         if snapshot != snap { snapshot = snap }
+        if wantLimits {
+            let l = UsageLimits.pick(new.live.1, new.claude.1)
+            if limits != .some(l) { limits = .some(l) }
+        }
     }
 
     /// Last 256 KB of the append-only log, never the whole file.
@@ -341,6 +363,7 @@ enum OfficeSelfCheck {
               let angela = withLog.rows.first(where: { $0.name == "Angela" }) else { preconditionFailure() }
         precondition(angela.state == .idle && angela.doing == "Ship it", "\(angela)")
         OfficeTabSelfCheck.run(now: now, fleet: fleet)
+        UsageLimitsSelfCheck.run()
         print("office self-check passed")
     }
 }
