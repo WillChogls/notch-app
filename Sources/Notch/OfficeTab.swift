@@ -95,13 +95,11 @@ private struct SummaryRow: View {
             Text("   ")
             parts.font(.system(size: 11, weight: .medium)).monospacedDigit().lineLimit(1)
             Spacer(minLength: 8)
-            (Text(OfficeAge.usd(floor.usd)).foregroundStyle(Warm.ink2) + Text(" spent").foregroundStyle(Warm.ink3))
-                .font(.system(size: 11, weight: .medium)).monospacedDigit()
         }
         .frame(height: 16)
         .padding(.horizontal, 4)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Office: \(floor.summaryText). \(OfficeAge.usd(floor.usd)) spent")
+        .accessibilityLabel("Office: \(floor.summaryText)")
     }
 
     private var parts: Text {
@@ -178,7 +176,7 @@ private struct AgentRow: View {
         .frame(height: 18)
         .opacity(row.state >= .paused ? 0.6 : 1)
         .help("\(row.name)\(row.role.isEmpty ? "" : " · " + row.role)\n\(row.state.label): \(row.doing)\n"
-              + "\(OfficeAge.usd(row.usd)) · \(row.backlog) unread")
+              + "\(row.backlog) unread")
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(row.name), \(row.state.label), \(row.doing)\(row.backlog > 0 ? ", \(row.backlog) unread" : "")")
     }
@@ -641,7 +639,6 @@ enum OfficeAge {
     }
 
     static func badge(_ n: Int) -> String { n > 9 ? "9+" : "\(n)" }
-    static func usd(_ v: Double) -> String { String(format: "$%.2f", v) }
 }
 
 // MARK: - Tab bar pieces

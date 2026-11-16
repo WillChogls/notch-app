@@ -9,7 +9,7 @@ Mockup: `office-tab-v2-mockup.png`. Plan: `office-tab-v2-plan.md`. This file rep
 ## 1. Layout
 ```
 [tabs 🏠 📥 🏢(badge)] [pet]        (notch)              [82% 🔋]   ← tab bar, 32pt
-Office   2 need you · 1 blocked · 2 working          $55.03 spent  ← summary row, 16pt
+Office   2 need you · 1 blocked · 2 working                        ← summary row, 16pt
 ┌ Agents 180 ┐ ┌ Limits 188 ┐ ┌ Ask me 150 ┐              ← cards, 116pt high
 ```
 - The content area is a `VStack(spacing: 6)`: the summary row, then `HStack(spacing: 8)` with the cards Agents, Limits and Ask me. The Workload card is removed.
@@ -42,7 +42,7 @@ Office   2 need you · 1 blocked · 2 working          $55.03 spent  ← summary
     1. "N need you" in `clay`, semibold. N = blocked agents + breakers + open ASK ME.
     2. "N blocked" in `amber`. N = tasks.json cards with status blocked.
     3. "N working" in `ink2`.
-  - Right side: the floor cost, e.g. "$55.03" in `ink2`, plus " spent" in `ink3`.
+  - Right side: empty (OFF-23 removed the cost). A `Spacer()` ends the row; nothing replaces it.
 - The tab bar no longer carries a summary. The battery stays where it is.
 
 ## 4. Limits card (v1.1; replaces the token chart, which is CANCELLED)
@@ -194,14 +194,14 @@ static let bubble = [   // drawn at column 11, row 0 (top right); blocked only
 - **VoiceOver:** hidden (`.accessibilityHidden(true)`). The summary already carries the state.
 
 ## 6. Agents card (restyled)
-- **Header:** "Agents" on the left; the agent count on the right in `ink3`. The cost moved to the summary row.
+- **Header:** "Agents" on the left; the agent count on the right in `ink3`. No cost anywhere (OFF-23).
 - **Rows:** same as OFF-17, with these changes:
   - Text is `ink` and `ink2`.
   - Blocked uses `amber`.
   - Dimmed rows are at 0.6.
   - The backlog capsule is `ink` at 0.12 with `ink2` text.
   - ~~**New:**~~ (cut in v1.1) a 6×6 swatch (radius 1.5) at the far right, in the agent's stack colour. It acts as the chart legend.
-- **Tooltip:** adds "7 days: 121.8M tokens · $55.03".
+- ~~**Tooltip:** adds "7 days: 121.8M tokens · $55.03".~~ (cut in OFF-23: no cost anywhere)
 
 ## 7. Ask me card (restyled)
 - **Header right:** "N open" in `clay`.

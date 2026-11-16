@@ -27,7 +27,7 @@
 <p align="center">
   Spotify and Apple Music. Artwork, a scrubbable timeline, and shuffle and repeat that light up in your accent colour when on.<br>
   If macOS blocks access to the player, a lock button takes you to the right Privacy setting.<br>
-  The bars follow the real audio, in the album's colour, and cost nothing while paused.<br>
+  The bars follow the real audio, in the album's colour, and use no CPU while paused.<br>
   Plug in, and the closed notch shows a charging pill too.
 </p>
 

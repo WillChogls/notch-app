@@ -24,8 +24,6 @@ struct OfficeRow: Equatable, Identifiable {
     let state: OfficeState
     /// Full doing text, e.g. "Needs you · Review plan" or "Active · Bash".
     let doing: String
-    var usd: Double = 0
-    var tokens: Int = 0
     var backlog: Int = 0
 }
 
@@ -55,7 +53,6 @@ struct OfficeQuestion: Equatable, Identifiable {
 /// Everything one read of the hive gives: the Home card uses `rows`, the Office tab all of it.
 struct OfficeFloor: Equatable {
     var rows: [OfficeRow]
-    var usd: Double = 0
     /// Blocked, doing, todo (file order within each), then the last 3 done; nil = tasks.json unreadable.
     var tasks: [OfficeTask]? = []
     /// Newest first; nil = tasks.json unreadable.
@@ -85,8 +82,6 @@ enum OfficeSnapshot: Equatable {
         let onHold: Bool?
         let lastTool: String?
         let lastActiveSecAgo: Double?
-        let usd: Double?
-        let tokens: Double?
         let inboxBacklog: Int?
     }
     private struct Tasks: Decodable { let tasks: [Card] }
@@ -187,10 +182,10 @@ enum OfficeSnapshot: Equatable {
                 (state, doing) = (.idle, card(a.id, "doing") ?? "Idle")
             }
             return OfficeRow(id: a.id, name: a.name ?? a.id, role: a.role ?? "", state: state, doing: doing,
-                             usd: a.usd ?? 0, tokens: Int(a.tokens ?? 0), backlog: a.inboxBacklog ?? 0)
+                             backlog: a.inboxBacklog ?? 0)
         }
         var floor = OfficeFloor(rows: rows.sorted { ($0.state, $0.name.lowercased()) < ($1.state, $1.name.lowercased()) },
-                                usd: f.agents.reduce(0) { $0 + ($1.usd ?? 0) }, tasks: nil, questions: nil)
+                                tasks: nil, questions: nil)
         guard let decoded else { return .live(floor) }
         let names = Dictionary(f.agents.map { ($0.id, $0.name ?? $0.id) }, uniquingKeysWith: { a, _ in a })
         func task(_ c: Card, _ s: OfficeTask.Status) -> OfficeTask {
@@ -398,7 +393,7 @@ enum OfficeSelfCheck {
     }
 }
 
-/// Office tab parsing (OFF-17): workload grouping, open ASK ME questions, costs.
+/// Office tab parsing (OFF-17): workload grouping, open ASK ME questions, unread backlog.
 enum OfficeTabSelfCheck {
     static func run(now: Date, fleet _: Data) {
         let ts = now.timeIntervalSince1970 * 1000
@@ -430,9 +425,8 @@ enum OfficeTabSelfCheck {
         precondition(q[1].text == "Ship it? Run x.", "plain text: \(q[1].text)")
         precondition(OfficeSnapshot.plain("Is _it_ *ok*? See [the spec](http://x) or snake_case_name.")
                      == "Is it ok? See the spec or snake_case_name.", OfficeSnapshot.plain("Is _it_ *ok*? See [the spec](http://x) or snake_case_name."))
-        precondition(abs(f.usd - 4.12) < 0.001, "floor cost \(f.usd)")
         let pam = f.rows.first { $0.name == "Pam" }
-        precondition(pam?.tokens == 340_000 && pam?.backlog == 2, "fleet extras")
+        precondition(pam?.backlog == 2, "fleet extras")
         precondition(OfficeSnapshot.date("2026-11-08T18:24:41.900300+00:00") != nil, "6-digit fraction")
         // No tasks file at all: fleet rows, workload and questions unreadable.
         guard case .live(let noTasks) = OfficeSnapshot.parse(fleet: fleet, tasks: nil, now: now) else { preconditionFailure() }
