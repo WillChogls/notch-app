@@ -1,8 +1,10 @@
-# OFF-24 spec: clipboard history in the Shelf tab (v1.0)
+# OFF-24 spec: clipboard history in the Shelf tab (v1.1)
+
+v1.1: content width is 534 (Dwight measured), so the card gap and strip spacing are 6 (Jim's fix, adopted).
 
 Next action: Jim builds per this spec after the plan's pasteboard spike (clipboard-plan.md, section 5, step 1).
 
-Mockup: `clipboard-mockup.png` (9 panels). Dark only. Uses only existing tokens: white at opacities, system green, the link blue, and the current glass helpers (`.glass`, `.glassGroup`). Panel stays 600×190, content area 572×138 (padding 14 sides and bottom, 6 top).
+Mockup: `clipboard-mockup.png` (9 panels). Dark only. Uses only existing tokens: white at opacities, system green, the link blue, and the current glass helpers (`.glass`, `.glassGroup`). Panel stays 600×190; the Shelf content area is 534×138 (measured).
 
 ## 1. Files | Clipboard switch (tab row)
 - Where: `TabBar` HStack, right after the tab group, only when `model.tab == .shelf`, with `.padding(.leading, 2)` (8pt after the last tab), same pattern as `OfficePet`. The badge overlay stays on the tab group.
@@ -12,7 +14,7 @@ Mockup: `clipboard-mockup.png` (9 panels). Dark only. Uses only existing tokens:
 - Choice remembered for the session only (`@State` in the model, not AppStorage). A file drop on the panel switches to Files.
 
 ## 2. Clipboard strip
-`HStack(spacing: 10)`: cards `HStack(spacing: 8)` (5 × 84 + 4 × 8 = 452), `Spacer(minLength: 0)`, then the action column: one Clear button, the same `shelfButton("trash", label: "Clear")` (84×28 glass capsule), vertically centred. No AirDrop. Clear hidden when the list is empty, off or blocked. Newest card first (leading). No scroll view needed (max 5).
+`HStack(spacing: 6)`: cards `HStack(spacing: 6)` (5 × 84 + 4 × 6 = 444; + 6 + 84 = 534), `Spacer(minLength: 0)`, then the action column: one Clear button, the same `shelfButton("trash", label: "Clear")` (84×28 glass capsule), vertically centred. No AirDrop. Clear hidden when the list is empty, off or blocked. Newest card first (leading). No scroll view needed (max 5).
 
 ## 3. Card (84×100, radius 12 continuous)
 - Padding 8. Content top-leading; footer at the bottom.

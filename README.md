@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  Music, live widgets and a file shelf in a liquid glass panel that grows out of the notch.<br>
+  Music, live widgets, a file shelf and clipboard history in a liquid glass panel that grows out of the notch.<br>
   Native SwiftUI, no dependencies.
 </p>
 
@@ -61,6 +61,19 @@
 </p>
 
 <img src="Resources/readme/feature-shelf-dark.png" alt="The shelf tab holding three files, one hovered with its remove X, plus AirDrop and Clear buttons">
+
+<a id="clipboard"></a>
+<h3 align="center">📋 Clipboard history</h3>
+<p align="center">
+  Your last 5 copies, one switch away: flip the Shelf tab to <b>Clipboard</b>.<br>
+  Text, rich text, images, files and links, newest first. Click one to copy it again, or drag it out.<br>
+  Kept in memory only, never on disk, and gone when Notch quits. Password managers and hidden copies are skipped.<br>
+  Don't want it? Turn off <b>Clipboard history</b> in Settings.
+</p>
+
+<img src="Resources/readme/feature-clipboard-dark.gif" alt="Animated: the shelf flips from Files to Clipboard; text is copied with Command-C and slides into the strip as a new card; hovering the rich text card shows its X, and a click shows Copied and moves it to the front">
+
+<img src="Resources/readme/feature-clipboard-dark.png" alt="The shelf tab switched to Clipboard: five recent copies as cards (text, a link, an image, rich text and a PDF file) with a Clear button">
 
 <h3 align="center">↗️ One click to your apps</h3>
 <p align="center">
@@ -148,6 +161,7 @@ Notch asks for each permission only when a feature first needs it, and records n
 | **Automation** (Music / Spotify) | Notch first sees Spotify or Music playing | To read the track and artwork, and to play, skip, shuffle and repeat |
 | **Audio capture** | Music first plays while Notch runs | To listen to the music app only, so the bars move with it. Nothing is recorded or saved. |
 | **Location** | You first pick the Weather widget | City-level, for the forecast (weather from [Open-Meteo](https://open-meteo.com)) |
+| **Clipboard** | Notch first reads a copy, only if macOS is set to ask | For clipboard history. If access is denied, the Clipboard view says so; allow it in System Settings → Privacy & Security → Paste from Other Apps. |
 
 Builds are ad-hoc signed, so macOS may ask again after you rebuild.
 
@@ -155,10 +169,10 @@ Builds are ad-hoc signed, so macOS may ask again after you rebuild.
 
 ## Settings
 
-<img src="Resources/readme/feature-settings-dark.png" alt="The Notch Settings window with Panel and General cards">
+<img src="Resources/readme/feature-settings-dark.png" alt="The Notch Settings window with Panel and General cards, including the Clipboard history toggle under Open at login">
 
 <p align="center">
-  Panel opacity and size · Music app · Widget · Open at login
+  Panel opacity and size · Music app · Widget · Open at login · Clipboard history
 </p>
 
 <br>
