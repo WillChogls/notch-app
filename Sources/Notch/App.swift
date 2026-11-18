@@ -5,7 +5,7 @@ import SwiftUI
 @main
 enum NotchApp {
     static func main() {
-        if ProcessInfo.processInfo.environment["NOTCH_SELFCHECK"] == "1" { EqualizerSelfCheck.run(); OfficeSelfCheck.run(); return }
+        if ProcessInfo.processInfo.environment["NOTCH_SELFCHECK"] == "1" { EqualizerSelfCheck.run(); OfficeSelfCheck.run(); ClipboardSelfCheck.run(); return }
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate

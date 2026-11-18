@@ -65,6 +65,7 @@ struct NotchRootView: View {
         }
         .onDrop(of: [.fileURL], isTargeted: $dropTargeted) { providers in
             model.shelf.add(providers)
+            model.shelfMode = .files
             return true
         }
         .onChange(of: dropTargeted) { _, value in model.setDropTargeted(value) }
@@ -141,6 +142,9 @@ struct OpenContent: View {
                 if model.tab == .office {
                     OfficePet(office: model.office).padding(.leading, 2)   // 8pt after the last tab
                 }
+                if model.tab == .shelf {
+                    ShelfModeSwitch().padding(.leading, 2)
+                }
                 Spacer()
                 if battery.hasBattery {
                     HStack(spacing: 4) {
@@ -157,7 +161,8 @@ struct OpenContent: View {
             Group {
                 switch model.tab {
                 case .home: HomeView()
-                case .shelf: ShelfView()
+                case .shelf:
+                    if model.shelfMode == .files { ShelfView() } else { ClipboardView(history: model.clipboard) }
                 case .office: OfficeTab(office: model.office)
                 }
             }

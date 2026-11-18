@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage("openScale") private var openScale = 1.0
     @AppStorage("musicApp") private var musicApp = Shortcut.defaultMusicApp
     @AppStorage("widget") private var widget = WidgetKind.office.rawValue
+    @AppStorage(ClipboardHistory.defaultsKey) private var clipboardHistory = true
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginError: String?
 
@@ -45,6 +46,18 @@ struct SettingsView: View {
                 }
                 Divider()
                 loginRow.padding(.vertical, 12)
+                Divider()
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Clipboard history")
+                        Text("Kept in memory only. Password manager copies are skipped.")
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Toggle("Clipboard history", isOn: $clipboardHistory).toggleStyle(.switch).labelsHidden().tint(.green)
+                }
+                .frame(minHeight: 44)
+                .padding(.vertical, 6)
             }
         }
         .font(.system(size: 13))

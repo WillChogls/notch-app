@@ -13,6 +13,9 @@ final class NotchModel: ObservableObject {
 
     @Published var state: State = .closed
     @Published var tab: Tab = .home
+    /// Shelf tab: Files or Clipboard (OFF-24). Session only.
+    enum ShelfMode { case files, clipboard }
+    @Published var shelfMode: ShelfMode = .files
     /// Size of the physical notch (or a fallback pill on Macs without one).
     @Published private(set) var notchSize = CGSize(width: 185, height: 32)
     @Published private(set) var hasNotch = true
@@ -23,6 +26,7 @@ final class NotchModel: ObservableObject {
     let player = NowPlaying()
     let battery = BatteryMonitor()
     let shelf = Shelf()
+    let clipboard = ClipboardHistory()
     let audio = AudioTap()
     let office = OfficeMonitor()
     let weather = WeatherModel.shared
